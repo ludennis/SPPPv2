@@ -37,6 +37,9 @@ def map_midi_power_to_percentage(midi_data_table,new_min=1,new_max=100):
 	return midi_data_table
 
 def read_profiles(profile_path):
+	'''
+	Read profiles and stored in a dictionary {filename:np.array()}
+	'''
 
 	# TODO: assert file_path is a path
 
@@ -49,4 +52,6 @@ def read_profiles(profile_path):
 				profiles[file_name] = []
 				for line in file:
 					profiles[file_name].append(line.rstrip().split(','))
+				profiles[file_name] = np.array(profiles[file_name])
 	return profiles
+
