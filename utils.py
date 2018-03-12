@@ -55,3 +55,26 @@ def read_profiles(profile_path):
 				profiles[file_name] = np.array(profiles[file_name])
 	return profiles
 
+def percentage_from_profile(data_table, profiles):
+
+	# TODO: assert there are 3 profiles
+	# TODO: assert each profile has 84 keys
+
+
+	# Sustain is on when input is <0,0,0,3,64,x> , where x can be 1-128
+	# Sustain is off when input is <0,0,0,3,64,0>
+
+	sustain_flag = False
+
+	for i in range(data_table):
+		row_data = data_table[i]
+		if row_data[3] == 3 and row_data[4]:
+			sustain_flag = True if row_data[5] > 0 else False
+			continue
+		note = row_data[4]
+		low_normal_power = profiles['low_sus.cfg'][note][3] if sustain_flag \
+						   else profiles['low_no_sus.cfg'][note][3]
+		high_normal_power = profiles['high.cfg'][note][3]
+		
+
+
