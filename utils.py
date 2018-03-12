@@ -17,6 +17,20 @@ def process_raw_midi_data(file_path):
 			midi_data_table.append(line.rstrip().split(','))
 	return np.array(midi_data_table,dtype=int)
 
+def translate_into_new_range(value,old_min,old_max,new_min,new_max):
+	'''
+	Translate and return a value to be in a new range
+	'''
+
+	old_range = old_max - old_min
+	new_range = new_max - new_min
+
+	value = (float(value) - float(old_min)) / float(old_range)
+	value = float(new_min) + float(value) * float(new_range)
+
+	return np.ceil(value)
+
+
 def map_midi_power_to_percentage(midi_data_table,new_min=1,new_max=100):
 	'''
 	Maps the power to [new_min,new_max] (default to [1,100])
@@ -25,35 +39,43 @@ def map_midi_power_to_percentage(midi_data_table,new_min=1,new_max=100):
 	song_min = np.min(midi_data_table[:,5])
 	song_max = np.max(midi_data_table[:,5])
 
-	song_range = song_max - song_min
-	new_range = new_max - new_min
-
 	for i in range(len(midi_data_table)):
-		orig_midi_power = midi_data_table[i][5]
-		scaled_midi_power = float(orig_midi_power - song_min) / float(song_range)
-		scaled_midi_power = float(new_min) + (scaled_midi_power * float(new_range))
-		midi_data_table[i][5] = int(np.ceil(scaled_midi_power))
-
+		orig_power = midi_data_table[i][5]
+		mapped_power = translate_into_new_range(orig_power,song_min,song_max,new_min,new_max)
+		midi_data_table[i][5] = int(mapped_power)
+		
 	return midi_data_table
 
-def read_profiles(profile_path):
+def process_profile(profile_path):
 	'''
-	Read profiles and stored in a dictionary {filename:np.array()}
+	Reads the profiles in profile_path and returns a dictionary
+	profile = {'sustain'|'no_sustain':[note,low_normal_percentage,high_normal_percentage]}
 	'''
 
 	# TODO: assert file_path is a path
 
-	profiles = {}
-	if isdir(profile_path):
-		for file_name in listdir(profile_path):
-			file_path = join(profile_path,file_name)
-			print (file_path)
-			with open(file_path,'r') as file:
-				profiles[file_name] = []
-				for line in file:
-					profiles[file_name].append(line.rstrip().split(','))
-				profiles[file_name] = np.array(profiles[file_name])
-	return profiles
+	profile = {}
+	profile['sustain'] = []
+	profile['no_sustain'] = []
+
+	num_notes_in_profile = 84
+
+	with open(profile_path+'/high.cfg','r') as high, \
+		 open(profile_path+'/low_no_sus.cfg','r') as low_no_sus, \
+		 open(profile_path+'/low_sus.cfg','r') as low_sus:
+
+		high_content = [line.strip('\n').split(',') for line in high.readlines()]
+		low_no_sus_content = [line.strip('\n').split(',') for line in low_no_sus.readlines()]
+		low_sus_content = [line.strip('\n').split(',') for line in low_sus.readlines()]
+
+		for i in range(len(high_content)):
+			profile['sustain'].append([i+1,low_sus_content[i][3], high_content[i][3]])
+			profile['no_sustain'].append([i+1,low_no_sus_content[i][3],high_content[i][3]])
+
+		profile['sustain'] = np.array(profile['sustain'],dtype=int)
+		profile['no_sustain'] = np.array(profile['no_sustain'],dtype=int)
+
+	return profile
 
 def percentage_from_profile(data_table, profiles):
 
@@ -75,6 +97,6 @@ def percentage_from_profile(data_table, profiles):
 		low_normal_power = profiles['low_sus.cfg'][note][3] if sustain_flag \
 						   else profiles['low_no_sus.cfg'][note][3]
 		high_normal_power = profiles['high.cfg'][note][3]
-		
+
 
 
