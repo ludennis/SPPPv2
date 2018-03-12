@@ -17,7 +17,7 @@ def process_raw_midi_data(file_path):
 			midi_data_table.append(line.rstrip().split(','))
 	return np.array(midi_data_table,dtype=int)
 
-def map_midi_power_to_range(midi_data_table,new_min=1,new_max=100):
+def map_midi_power_to_percentage(midi_data_table,new_min=1,new_max=100):
 	'''
 	Maps the power to [new_min,new_max] (default to [1,100])
 	Updates the midi_data_table and returns

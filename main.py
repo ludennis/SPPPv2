@@ -9,7 +9,7 @@ if __name__ == '__main__':
 
 
 	raw_midi_data_table = utils.process_raw_midi_data(args.midi_input)
-	mapped_midi_data_table = utils.map_midi_power_to_range(raw_midi_data_table)
+	mapped_midi_data_table = utils.map_midi_power_to_percentage(raw_midi_data_table)
 
 	profiles = utils.read_profiles(args.profile)
 
