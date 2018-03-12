@@ -46,7 +46,7 @@ def map_midi_power_to_percentage(midi_data_table,new_min=1,new_max=100):
 		
 	return midi_data_table
 
-def process_profile(profile_path):
+def read_profile(profile_path):
 	'''
 	Reads the profiles in profile_path and returns a dictionary
 	profile = {'sustain'|'no_sustain':[note,low_normal_percentage,high_normal_percentage]}
