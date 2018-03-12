@@ -77,6 +77,18 @@ def read_profile(profile_path):
 
 	return profile
 
+def map_profile_power_to_percentage(profile,new_min=1,new_max=100):
+	for key in profile.keys():
+		old_min = np.min(profile[key][:,1])
+		old_max = np.max(profile[key][:,2])
+		for i in range(len(profile[key])):
+			low_normal_power = profile[key][i][1]
+			high_normal_power = profile[key][i][2]
+			profile[key][i][1] = translate_into_new_range(low_normal_power,old_min,old_max,new_min,new_max)
+			profile[key][i][2] = translate_into_new_range(high_normal_power,old_min,old_max,new_min,new_max)
+
+	return profile
+
 def percentage_from_profile(data_table, profiles):
 
 	# TODO: assert there are 3 profiles
