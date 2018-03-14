@@ -10,6 +10,9 @@ def process_raw_midi_data(file_path):
 	'''
 	
 	# TODO: assert file_path is a path
+	# TODO: if row_data[3] == 3 and row_data[4] != 64
+	# TODO: ignore row_data[1] (combine different channels)
+
 
 	midi_data_table = []
 	with open(file_path,'r') as midi_file:
@@ -17,33 +20,44 @@ def process_raw_midi_data(file_path):
 			midi_data_table.append(line.rstrip().split(','))
 	return np.array(midi_data_table,dtype=int)
 
-def translate_into_new_range(value,old_min,old_max,new_min,new_max):
+def translate_into_percentage(value,old_min,old_max):
 	'''
-	Translate and return a value to be in a new range
+	Translate and return a value to be a percentage [1,100]
 	'''
-
 	old_range = old_max - old_min
-	new_range = new_max - new_min
 
-	value = (float(value) - float(old_min)) / float(old_range)
-	value = float(new_min) + float(value) * float(new_range)
+	percentage = (float(value) - float(old_min)) / float(old_range) * 100.0
 
-	return np.ceil(value)
+	return percentage
 
 
-def map_midi_power_to_percentage(midi_data_table,new_min=1,new_max=100):
+def map_midi_power_to_percentage(midi_data_table):
 	'''
 	Maps the power to [new_min,new_max] (default to [1,100])
 	Updates the midi_data_table and returns
 	'''
-	song_min = np.min(midi_data_table[:,5])
-	song_max = np.max(midi_data_table[:,5])
+
+	# <Time, track number, MIDI channel, type, key, value>
+	# if type = 0 then it's a note off
+	# also if value = 0 it's a note off too
+
+	# TODO: detect if note if off
+	# Skips all note off and skip all sustains
+	song_with_only_note_on = np.array([row for row in midi_data_table \
+									      if (row[5] > 0 and row[3] > 0) \
+									      and (row[3] != 3 and row[4] != 64)])
+	# TODO: exclude 0 when getting np.min
+	song_min = np.min(song_with_only_note_on[:,5])
+	song_max = np.max(song_with_only_note_on[:,5])
 
 	for i in range(len(midi_data_table)):
-		orig_power = midi_data_table[i][5]
-		mapped_power = translate_into_new_range(orig_power,song_min,song_max,new_min,new_max)
-		midi_data_table[i][5] = int(mapped_power)
-		
+		# TODO: append a note of 0 if note power is 0
+		if midi_data_table[i][5] > 0 and midi_data_table[i][3] > 0 and \
+		   midi_data_table[i][3] != 3 and midi_data_table[i][3] != 64:
+			orig_power = midi_data_table[i][5]
+			power_percentage = translate_into_percentage(orig_power,song_min,song_max)
+			midi_data_table[i][5] = power_percentage
+			
 	return midi_data_table
 
 def read_profile(profile_path):
@@ -78,14 +92,15 @@ def read_profile(profile_path):
 	return profile
 
 def map_profile_power_to_percentage(profile,new_min=1,new_max=100):
+	'''
+	map profile's power to percentage
+	'''
 	for key in profile.keys():
-		old_min = np.min(profile[key][:,1])
-		old_max = np.max(profile[key][:,2])
 		for i in range(len(profile[key])):
 			low_normal_power = profile[key][i][1]
 			high_normal_power = profile[key][i][2]
-			profile[key][i][1] = translate_into_new_range(low_normal_power,old_min,old_max,new_min,new_max)
-			profile[key][i][2] = translate_into_new_range(high_normal_power,old_min,old_max,new_min,new_max)
+			profile[key][i][1] = translate_into_percentage(low_normal_power,low_normal_power,high_normal_power)
+			profile[key][i][2] = translate_into_percentage(high_normal_power,low_normal_power,high_normal_power)
 
 	return profile
 
@@ -102,12 +117,12 @@ def percentage_from_profile(data_table, profiles):
 
 	for i in range(data_table):
 		row_data = data_table[i]
-		if row_data[3] == 3 and row_data[4]:
+		if row_data[3] == 3 and row_data[4] == 64:
 			sustain_flag = True if row_data[5] > 0 else False
 			continue
 		note = row_data[4]
-		low_normal_power = profiles['low_sus.cfg'][note][3] if sustain_flag \
-						   else profiles['low_no_sus.cfg'][note][3]
+		low_normal_power = profiles['sustain'][note] if sustain_flag \
+						   else profiles['no_sustain'][note]
 		high_normal_power = profiles['high.cfg'][note][3]
 
 
