@@ -31,7 +31,7 @@ def translate_into_percentage(value,old_min,old_max):
 	return percentage
 
 
-def map_midi_power_to_percentage(midi_data_table):
+def map_midi_to_percentage(midi_data_table):
 	'''
 	Maps the power to [new_min,new_max] (default to [1,100])
 	Updates the midi_data_table and returns
@@ -78,7 +78,7 @@ def read_profile(profile_path):
 		 open(profile_path+'/low_no_sus.cfg','r') as low_no_sus, \
 		 open(profile_path+'/low_sus.cfg','r') as low_sus:
 
-		high_content = [line.strip('\n').split(',') for line in high.readlines()]
+		high_normal_percentagentent = [line.strip('\n').split(',') for line in high.readlines()]
 		low_no_sus_content = [line.strip('\n').split(',') for line in low_no_sus.readlines()]
 		low_sus_content = [line.strip('\n').split(',') for line in low_sus.readlines()]
 
