@@ -3,7 +3,7 @@ from os.path import isdir,join
 import numpy as np
 
 
-def process_raw_midi_data(file_path):
+def filter_raw_data(file_path):
 	'''
 	Read raw data from an already parsed text file from midi
 	Convert the data table to numpy array and return
@@ -78,7 +78,7 @@ def read_profile(profile_path):
 		 open(profile_path+'/low_no_sus.cfg','r') as low_no_sus, \
 		 open(profile_path+'/low_sus.cfg','r') as low_sus:
 
-		high_normal_percentagentent = [line.strip('\n').split(',') for line in high.readlines()]
+		high_content = [line.strip('\n').split(',') for line in high.readlines()]
 		low_no_sus_content = [line.strip('\n').split(',') for line in low_no_sus.readlines()]
 		low_sus_content = [line.strip('\n').split(',') for line in low_sus.readlines()]
 
