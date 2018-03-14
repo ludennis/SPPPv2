@@ -13,12 +13,16 @@ def filter_raw_data(file_path):
 	# TODO: if row_data[3] == 3 and row_data[4] != 64
 	# TODO: ignore row_data[1] (combine different channels)
 
-
 	midi_data_table = []
 	with open(file_path,'r') as midi_file:
 		for line in midi_file:
 			midi_data_table.append(line.rstrip().split(','))
 	return np.array(midi_data_table,dtype=int)
+
+
+# TODO
+def add_sustain_column():
+	pass
 
 def translate_into_percentage(value,old_min,old_max):
 	'''
@@ -95,6 +99,10 @@ def apply_profile(data,profile):
 	'''
 	map profile's power to percentage
 	'''
+
+	# profile['sustain'] => [note,low,high]
+	# profile['no_sustain'] => [note,low,high]
+
 
 	pass
 
