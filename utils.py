@@ -91,7 +91,7 @@ def read_profile(profile_path):
 
 	return profile
 
-def map_profile_power_to_percentage(profile,new_min=1,new_max=100):
+def apply_profile(profile,new_min=1,new_max=100):
 	'''
 	map profile's power to percentage
 	'''
@@ -103,27 +103,5 @@ def map_profile_power_to_percentage(profile,new_min=1,new_max=100):
 			profile[key][i][2] = translate_into_percentage(high_normal_power,low_normal_power,high_normal_power)
 
 	return profile
-
-def percentage_from_profile(data_table, profiles):
-
-	# TODO: assert there are 3 profiles
-	# TODO: assert each profile has 84 keys
-
-
-	# Sustain is on when input is <0,0,0,3,64,x> , where x can be 1-128
-	# Sustain is off when input is <0,0,0,3,64,0>
-
-	sustain_flag = False
-
-	for i in range(data_table):
-		row_data = data_table[i]
-		if row_data[3] == 3 and row_data[4] == 64:
-			sustain_flag = True if row_data[5] > 0 else False
-			continue
-		note = row_data[4]
-		low_normal_power = profiles['sustain'][note] if sustain_flag \
-						   else profiles['no_sustain'][note]
-		high_normal_power = profiles['high.cfg'][note][3]
-
 
 

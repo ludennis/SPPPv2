@@ -11,7 +11,7 @@ if __name__ == '__main__':
 	mapped_midi_data_table = utils.map_midi_power_to_percentage(raw_midi_data_table)
 
 	profile = utils.read_profile(args.profile)
-	profile = utils.map_profile_power_to_percentage(profile)
+	profile = utils.apply_profile(profile)
 
 	print ('args.midi_input: {}'.format(args.midi_input))
 	print ('args.p: {}'.format(args.profile))
