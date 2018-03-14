@@ -91,17 +91,19 @@ def read_profile(profile_path):
 
 	return profile
 
-def apply_profile(profile,new_min=1,new_max=100):
+def apply_profile(data,profile):
 	'''
 	map profile's power to percentage
 	'''
-	for key in profile.keys():
-		for i in range(len(profile[key])):
-			low_normal_power = profile[key][i][1]
-			high_normal_power = profile[key][i][2]
-			profile[key][i][1] = translate_into_percentage(low_normal_power,low_normal_power,high_normal_power)
-			profile[key][i][2] = translate_into_percentage(high_normal_power,low_normal_power,high_normal_power)
 
-	return profile
+	pass
+
+	# for key in profile.keys():
+	# 	for i in range(len(profile[key])):
+	# 		low_normal_power = profile[key][i][1]
+	# 		high_normal_power = profile[key][i][2]
+	# 		profile[key][i][1] = translate_into_percentage(low_normal_power,low_normal_power,high_normal_power)
+	# 		profile[key][i][2] = translate_into_percentage(high_normal_power,low_normal_power,high_normal_power)
+
 
 
