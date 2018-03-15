@@ -21,8 +21,27 @@ def filter_raw_data(file_path):
 
 
 # TODO
-def add_sustain_column():
+def detect_sustain():
 	pass
+
+def add_sustain_column(data):
+	# add a column of zeroes in data
+	data = np.insert(data,data.shape[1],0,axis=1)
+
+	# detect sustain
+	sustain_flag = False
+	for row in data:
+		if row[3] == 3 and row[4] == 64:
+			if row[5] > 0:
+				sustain_flag = True
+			else:
+				sustain_flag = False
+			continue
+		if row[3] == 1 and row[5] > 0:
+			row[6] = 1 if sustain_flag == True else 0
+
+	print (data)
+	return data
 
 def translate_into_percentage(value,old_min,old_max):
 	'''
