@@ -1,5 +1,6 @@
 import argparse,sys
 import utils
+import numpy as np
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Process midi files into solenoid sequences.')
@@ -13,13 +14,13 @@ if __name__ == '__main__':
 
 	midi_with_sustain_column = utils.add_sustain_column(filtered_raw_midi_data)
 
-	midi_percentage = utils.map_midi_to_percentage(filtered_raw_midi_data)
+	midi_percentage = utils.map_midi_to_percentage(midi_with_sustain_column)
 
 	profile = utils.read_profile(args.profile)
 
 	processed_midi_data = utils.apply_profile(midi_percentage,profile)
 
-
+	np.savetxt('{}_processed.txt'.format(args.midi_input),processed_midi_data,fmt='% 4d')
 
 	print ('args.midi_input: {}'.format(args.midi_input))
 	print ('args.p: {}'.format(args.profile))
