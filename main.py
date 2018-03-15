@@ -24,5 +24,8 @@ if __name__ == '__main__':
 	processed_midi_data = utils.apply_profile(midi_percentage,profile)
 	np.savetxt('./tables/4_processed_midi_data.txt',processed_midi_data,fmt='% 4d')
 
+	processed_sorted_by_note = utils.sort_by_note(processed_midi_data)
+	np.savetxt('./tables/5_processed_sorted_by_note.txt', processed_sorted_by_note,fmt='% 4d')
+
 	print ('args.midi_input: {}'.format(args.midi_input))
 	print ('args.p: {}'.format(args.profile))

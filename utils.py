@@ -59,8 +59,8 @@ def translate_into_percentage(value,old_min,old_max,song_range=(0,100)):
 	new_range = song_range[1] - song_range[0]
 	new_min = song_range[0]
 
-	assert old_range <= 0, 'translate_into_percentage(): old_range is less than or equal 0'
-	assert new_range <= 0, 'translate_into_percentage(): new_range is less than or equal 0'
+	assert old_range > 0, 'translate_into_percentage(): old_range is less than or equal 0'
+	assert new_range > 0, 'translate_into_percentage(): new_range is less than or equal 0'
 
 	percentage = (((value - old_min) * new_range) / (old_range)) + new_min
 
@@ -104,9 +104,9 @@ def read_profile(profile_path):
 
 	num_notes_in_profile = 84
 
-	with open(profile_path+'/high.cfg','r') as high, \
-		 open(profile_path+'/low_no_sus.cfg','r') as low_no_sus, \
-		 open(profile_path+'/low_sus.cfg','r') as low_sus:
+	with open(profile_path+'/loud.cfg','r') as high, \
+		 open(profile_path+'/quiet_no_sus.cfg','r') as low_no_sus, \
+		 open(profile_path+'/quiet_sus.cfg','r') as low_sus:
 
 		high_content = [line.strip('\n').split(',') for line in high.readlines()]
 		low_no_sus_content = [line.strip('\n').split(',') for line in low_no_sus.readlines()]
@@ -142,4 +142,6 @@ def apply_profile(data,profile):
 			row[5] = low_normal_power + power_range * note_percentage / 100
 	return data
 
-
+def sort_by_note(data):
+	data = sorted(data, key = lambda x: (x[4],x[0]))
+	return np.array(data,dtype=int)
