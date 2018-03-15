@@ -117,13 +117,22 @@ def apply_profile(data,profile):
 	'''
 	map profile's power to percentage
 	'''
+	#  [16300     0     0     1    50    50     1]
 
-	# profile['sustain'] => [note,low,high]
-	# profile['no_sustain'] => [note,low,high]
+	# profile['sustain'] => [note,low,high] => [ 50, 108, 143]
+	# profile['no_sustain'] => [note,low,high] => [ 50, 113, 143]
 
-
-
-	pass
+	for row in data:
+		if row[3] == 1:
+			note = row[4]
+			low_normal_power = profile['sustain'][note-1][1] if row[6] == 1 else \
+							   profile['no_sustain'][note-1][1]
+			high_normal_power = profile['sustain'][note-1][2] if row[6] == 1 else \
+								profile['no_sustain'][note-1][1]
+			power_range = high_normal_power - low_normal_power
+			note_percentage = row[5]
+			row[5] = low_normal_power + power_range * note_percentage / 100
+	return data
 
 	# for key in profile.keys():
 	# 	for i in range(len(profile[key])):
