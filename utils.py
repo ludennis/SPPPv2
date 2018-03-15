@@ -40,7 +40,6 @@ def add_sustain_column(data):
 		if row[3] == 1 and row[5] > 0:
 			row[6] = 1 if sustain_flag == True else 0
 
-	print (data)
 	return data
 
 def translate_into_percentage(value,old_min,old_max):
@@ -121,6 +120,7 @@ def apply_profile(data,profile):
 
 	# profile['sustain'] => [note,low,high]
 	# profile['no_sustain'] => [note,low,high]
+
 
 
 	pass
