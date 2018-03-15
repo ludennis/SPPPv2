@@ -1,22 +1,30 @@
 from os import listdir
 from os.path import isdir,join
 import numpy as np
+import const
 
 
 def filter_raw_data(file_path):
 	'''
 	Read raw data from an already parsed text file from midi
-	Convert the data table to numpy array and return
+	Convert and filter the data table to numpy array and return
 	'''
 	
 	# TODO: assert file_path is a path
 	# TODO: if row_data[3] == 3 and row_data[4] != 64
-	# TODO: ignore row_data[1] (combine different channels)
 
 	midi_data_table = []
 	with open(file_path,'r') as midi_file:
 		for line in midi_file:
 			midi_data_table.append(line.rstrip().split(','))
+
+	# convert to numpy array first
+	midi_data_table = np.array(midi_data_table,dtype=int)
+
+	# TODO: change power to noteoff to 0
+	for i in range(len(midi_data_table)):
+		if midi_data_table[i][3] == 0: midi_data_table[i][5] = 0
+
 	return np.array(midi_data_table,dtype=int)
 
 
@@ -42,16 +50,21 @@ def add_sustain_column(data):
 
 	return data
 
-def translate_into_percentage(value,old_min,old_max):
+def translate_into_percentage(value,old_min,old_max,song_range=(0,100)):
 	'''
 	Translate and return a value to be a percentage [1,100]
 	'''
-	old_range = old_max - old_min
 
-	percentage = (float(value) - float(old_min)) / float(old_range) * 100.0
+	old_range = old_max - old_min
+	new_range = song_range[1] - song_range[0]
+	new_min = song_range[0]
+
+	assert old_range <= 0, 'translate_into_percentage(): old_range is less than or equal 0'
+	assert new_range <= 0, 'translate_into_percentage(): new_range is less than or equal 0'
+
+	percentage = (((value - old_min) * new_range) / (old_range)) + new_min
 
 	return percentage
-
 
 def map_midi_to_percentage(midi_data_table):
 	'''
@@ -63,21 +76,16 @@ def map_midi_to_percentage(midi_data_table):
 	# if type = 0 then it's a note off
 	# also if value = 0 it's a note off too
 
-	# TODO: detect if note if off
-	# Skips all note off and skip all sustains
-	song_with_only_note_on = np.array([row for row in midi_data_table \
-									      if (row[5] > 0 and row[3] > 0) \
-									      and (row[3] != 3 and row[4] != 64)])
+	# TODO: only have note ons
+	song_with_only_note_on = np.array([row for row in midi_data_table if row[3] == 1])
 	# TODO: exclude 0 when getting np.min
 	song_min = np.min(song_with_only_note_on[:,5])
 	song_max = np.max(song_with_only_note_on[:,5])
 
 	for i in range(len(midi_data_table)):
-		# TODO: append a note of 0 if note power is 0
-		if midi_data_table[i][5] > 0 and midi_data_table[i][3] > 0 and \
-		   midi_data_table[i][3] != 3 and midi_data_table[i][3] != 64:
+		if midi_data_table[i][3] == 1:
 			orig_power = midi_data_table[i][5]
-			power_percentage = translate_into_percentage(orig_power,song_min,song_max)
+			power_percentage = translate_into_percentage(orig_power,song_min,song_max,const.SONG_BOUNDARY)
 			midi_data_table[i][5] = power_percentage
 			
 	return midi_data_table
@@ -125,21 +133,13 @@ def apply_profile(data,profile):
 	for row in data:
 		if row[3] == 1:
 			note = row[4]
-			low_normal_power = profile['sustain'][note-1][1] if row[6] == 1 else \
-							   profile['no_sustain'][note-1][1]
-			high_normal_power = profile['sustain'][note-1][2] if row[6] == 1 else \
-								profile['no_sustain'][note-1][1]
+			low_normal_power = profile['sustain'][note][1] if row[6] == 1 else \
+							   profile['no_sustain'][note][1]
+			high_normal_power = profile['sustain'][note][2] if row[6] == 1 else \
+								profile['no_sustain'][note][2]
 			power_range = high_normal_power - low_normal_power
 			note_percentage = row[5]
 			row[5] = low_normal_power + power_range * note_percentage / 100
 	return data
-
-	# for key in profile.keys():
-	# 	for i in range(len(profile[key])):
-	# 		low_normal_power = profile[key][i][1]
-	# 		high_normal_power = profile[key][i][2]
-	# 		profile[key][i][1] = translate_into_percentage(low_normal_power,low_normal_power,high_normal_power)
-	# 		profile[key][i][2] = translate_into_percentage(high_normal_power,low_normal_power,high_normal_power)
-
 
 
