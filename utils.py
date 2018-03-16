@@ -28,6 +28,12 @@ def filter_raw_data(file_path):
 	return np.array(midi_data_table,dtype=int)
 
 
+def add_id(data):
+	data = np.insert(data,0,0,axis=1)
+	for i in range(len(data)):
+		data[i][0] = i+1
+	return data
+
 # TODO
 def detect_sustain():
 	pass
@@ -39,14 +45,14 @@ def add_sustain_column(data):
 	# detect sustain
 	sustain_flag = False
 	for row in data:
-		if row[3] == 3 and row[4] == 64:
-			if row[5] > 0:
+		if row[4] == 3 and row[5] == 64:
+			if row[6] > 0:
 				sustain_flag = True
 			else:
 				sustain_flag = False
 			continue
-		if row[3] == 1 and row[5] > 0:
-			row[6] = 1 if sustain_flag == True else 0
+		if row[4] == 1 and row[6] > 0:
+			row[7] = 1 if sustain_flag == True else 0
 
 	return data
 
@@ -77,16 +83,16 @@ def map_midi_to_percentage(midi_data_table):
 	# also if value = 0 it's a note off too
 
 	# TODO: only have note ons
-	song_with_only_note_on = np.array([row for row in midi_data_table if row[3] == 1])
+	song_with_only_note_on = np.array([row for row in midi_data_table if row[4] == 1])
 	# TODO: exclude 0 when getting np.min
-	song_min = np.min(song_with_only_note_on[:,5])
-	song_max = np.max(song_with_only_note_on[:,5])
+	song_min = np.min(song_with_only_note_on[:,6])
+	song_max = np.max(song_with_only_note_on[:,6])
 
 	for i in range(len(midi_data_table)):
-		if midi_data_table[i][3] == 1:
-			orig_power = midi_data_table[i][5]
+		if midi_data_table[i][4] == 1:
+			orig_power = midi_data_table[i][6]
 			power_percentage = translate_into_percentage(orig_power,song_min,song_max,const.SONG_BOUNDARY)
-			midi_data_table[i][5] = power_percentage
+			midi_data_table[i][6] = power_percentage
 			
 	return midi_data_table
 
@@ -131,17 +137,17 @@ def apply_profile(data,profile):
 	# profile['no_sustain'] => [note,low,high] => [ 50, 113, 143]
 
 	for row in data:
-		if row[3] == 1:
-			note = row[4]
-			low_normal_power = profile['sustain'][note][1] if row[6] == 1 else \
+		if row[4] == 1:
+			note = row[5]
+			low_normal_power = profile['sustain'][note][1] if row[7] == 1 else \
 							   profile['no_sustain'][note][1]
-			high_normal_power = profile['sustain'][note][2] if row[6] == 1 else \
+			high_normal_power = profile['sustain'][note][2] if row[7] == 1 else \
 								profile['no_sustain'][note][2]
 			power_range = high_normal_power - low_normal_power
-			note_percentage = row[5]
-			row[5] = low_normal_power + power_range * note_percentage / 100
+			note_percentage = row[6]
+			row[6] = low_normal_power + power_range * note_percentage / 100
 	return data
 
 def sort_by_note(data):
-	data = sorted(data, key = lambda x: (x[4],x[0]))
+	data = sorted(data, key = lambda x: (x[5],x[1]))
 	return np.array(data,dtype=int)
