@@ -11,24 +11,28 @@ if __name__ == '__main__':
 	raw_midi_table = args.midi_input
 
 	filtered_raw_midi_data = utils.filter_raw_data(raw_midi_table)
-	filtered_raw_midi_data.to_csv('./tables/1_filtered_raw_midi_data.csv',index=False)
+	with open('./tables/1_filtered_raw_midi_data.txt','w') as file:
+		with pd.option_context('display.max_rows',None):
+			file.write(filtered_raw_midi_data.__repr__())
 
-	# id_midi_data = utils.add_id(filtered_raw_midi_data)
-	# np.savetxt('./tables/2_id_midi_data.txt',id_midi_data,fmt='% 4d')
 
-	# midi_with_sustain_column = utils.add_sustain_column(id_midi_data)
-	# np.savetxt('./tables/3_midi_with_sustain_column.txt',midi_with_sustain_column,fmt='% 4d')
+	midi_with_sustain_column = utils.add_sustain_column(filtered_raw_midi_data)
+	with open('./tables/2_midi_with_sustain_column.txt','w') as file:
+		with pd.option_context('display.max_rows',None):
+			file.write(midi_with_sustain_column.__repr__())
+
 
 	# midi_percentage = utils.map_midi_to_percentage(midi_with_sustain_column)
-	# np.savetxt('./tables/4_midi_percentage.txt',midi_percentage,fmt='% 4d')
+	# np.savetxt('./tables/3_midi_percentage.txt',midi_percentage,fmt='% 4d')
 
 	# profile = utils.read_profile(args.profile)
 
 	# processed_midi_data = utils.apply_profile(midi_percentage,profile)
-	# np.savetxt('./tables/5_processed_midi_data.txt',processed_midi_data,fmt='% 4d')
+	# np.savetxt('./tables/4_processed_midi_data.txt',processed_midi_data,fmt='% 4d')
 
 	# processed_sorted_by_note = utils.sort_by_note(processed_midi_data)
-	# np.savetxt('./tables/6_processed_sorted_by_note.txt', processed_sorted_by_note,fmt='% 4d')
+	# np.savetxt('./tables/5_processed_sorted_by_note.txt', processed_sorted_by_note,fmt='% 4d')
 
 	print ('args.midi_input: {}'.format(args.midi_input))
 	print ('args.p: {}'.format(args.profile))
+	

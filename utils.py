@@ -33,23 +33,24 @@ def filter_raw_data(file_path):
 def detect_sustain():
 	pass
 
-def add_sustain_column(data):
+def add_sustain_column(dataframe):
+
 	# add a column of zeroes in data
-	data = np.insert(data,data.shape[1],0,axis=1)
+	dataframe['sustain'] = pd.Series(np.zeros(dataframe.shape[0],dtype=int),index=dataframe.index)
 
 	# detect sustain
 	sustain_flag = False
-	for row in data:
-		if row[4] == 3 and row[5] == 64:
-			if row[6] > 0:
+	for index,row in dataframe.iterrows():
+		if row['event'] == 3 and row['note'] == 64:
+			if row['power'] > 0:
 				sustain_flag = True
 			else:
 				sustain_flag = False
 			continue
-		if row[4] == 1 and row[6] > 0:
-			row[7] = 1 if sustain_flag == True else 0
+		if row['event'] == 1 and row['power'] > 0:
+			dataframe.loc[index]['sustain'] = 1 if sustain_flag == True else 0
 
-	return data
+	return dataframe
 
 def translate_into_percentage(value,old_min,old_max,song_range=(0,100)):
 	'''
