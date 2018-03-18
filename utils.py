@@ -14,28 +14,28 @@ def filter_raw_data(file_path):
 	# TODO: assert file_path is a path
 	# TODO: if row_data[3] == 3 and row_data[4] != 64
 
-	dataframe = pd.read_csv(file_path)
+	df = pd.read_csv(file_path)
 
-	mask = dataframe.event == 0
+	mask = df.event == 0
 	column_name = 'power'
-	dataframe.loc[mask,column_name] = 0
+	df.loc[mask,column_name] = 0
 
-	return dataframe
+	return df
 
 # TODO
 def detect_sustain():
 	pass
 
-def add_sustain_column(dataframe):
+def add_sustain_column(df):
 	'''
 	add a sustain column to the table for each note on
 	'''
 	# add a column of zeroes in data
-	dataframe['sustain'] = pd.Series(np.zeros(dataframe.shape[0],dtype=int),index=dataframe.index)
+	df['sustain'] = pd.Series(np.zeros(df.shape[0],dtype=int),index=df.index)
 
 	# detect sustain
 	sustain_flag = False
-	for index,row in dataframe.iterrows():
+	for index,row in df.iterrows():
 		if row['event'] == 3 and row['note'] == 64:
 			if row['power'] > 0:
 				sustain_flag = True
@@ -43,9 +43,9 @@ def add_sustain_column(dataframe):
 				sustain_flag = False
 			continue
 		if row['event'] == 1 and row['power'] > 0:
-			dataframe.loc[index]['sustain'] = 1 if sustain_flag == True else 0
+			df.loc[index]['sustain'] = 1 if sustain_flag == True else 0
 
-	return dataframe
+	return df
 
 def translate_into_percentage(value,old_min,old_max,song_range=(0,100)):
 	'''
@@ -63,7 +63,7 @@ def translate_into_percentage(value,old_min,old_max,song_range=(0,100)):
 
 	return percentage
 
-def map_midi_to_percentage(dataframe):
+def map_midi_to_percentage(df):
 	'''
 	Maps the power to [new_min,new_max] (default to [1,100])
 	Updates the midi_data_table and returns
@@ -74,18 +74,19 @@ def map_midi_to_percentage(dataframe):
 	# also if value = 0 it's a note off too
 
 	# TODO: only have note ons
-	song_with_only_note_on = np.array([row for row in dataframe if row[4] == 1])
+	song_with_only_note_on = df.loc[df['event']==1]
+	# song_with_only_note_on = np.array([row for row in df if row[4] == 1])
 	# TODO: exclude 0 when getting np.min
-	song_min = np.min(song_with_only_note_on[:,6])
-	song_max = np.max(song_with_only_note_on[:,6])
+	song_min = song_with_only_note_on['power'].min()
+	song_max = song_with_only_note_on['power'].max()
 
-	for i in range(len(dataframe)):
-		if dataframe[i][4] == 1:
-			orig_power = dataframe[i][6]
+	for index,row in df.iterrows():
+		if row['event'] == 1:
+			orig_power = row['power']
 			power_percentage = translate_into_percentage(orig_power,song_min,song_max,const.SONG_BOUNDARY)
-			dataframe[i][6] = power_percentage
+			df.loc[index]['power'] = power_percentage
 			
-	return dataframe
+	return df
 
 def read_profile(profile_path):
 	'''

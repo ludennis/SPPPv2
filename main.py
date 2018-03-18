@@ -22,8 +22,10 @@ if __name__ == '__main__':
 			file.write(midi_with_sustain_column.__repr__())
 
 
-	# midi_percentage = utils.map_midi_to_percentage(midi_with_sustain_column)
-	# np.savetxt('./tables/3_midi_percentage.txt',midi_percentage,fmt='% 4d')
+	midi_percentage = utils.map_midi_to_percentage(midi_with_sustain_column)
+	with open('./tables/3_midi_percentage.txt','w') as file:
+		with pd.option_context('display.max_rows',None):
+			file.write(midi_percentage.__repr__())
 
 	# profile = utils.read_profile(args.profile)
 
@@ -35,4 +37,3 @@ if __name__ == '__main__':
 
 	print ('args.midi_input: {}'.format(args.midi_input))
 	print ('args.p: {}'.format(args.profile))
-	
