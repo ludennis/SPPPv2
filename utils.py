@@ -22,19 +22,14 @@ def filter_raw_data(file_path):
 
 	return dataframe
 
-
-# def add_id(data):
-# 	data = np.insert(data,0,0,axis=1)
-# 	for i in range(len(data)):
-# 		data[i][0] = i+1
-# 	return data
-
 # TODO
 def detect_sustain():
 	pass
 
 def add_sustain_column(dataframe):
-
+	'''
+	add a sustain column to the table for each note on
+	'''
 	# add a column of zeroes in data
 	dataframe['sustain'] = pd.Series(np.zeros(dataframe.shape[0],dtype=int),index=dataframe.index)
 
@@ -68,7 +63,7 @@ def translate_into_percentage(value,old_min,old_max,song_range=(0,100)):
 
 	return percentage
 
-def map_midi_to_percentage(midi_data_table):
+def map_midi_to_percentage(dataframe):
 	'''
 	Maps the power to [new_min,new_max] (default to [1,100])
 	Updates the midi_data_table and returns
@@ -79,18 +74,18 @@ def map_midi_to_percentage(midi_data_table):
 	# also if value = 0 it's a note off too
 
 	# TODO: only have note ons
-	song_with_only_note_on = np.array([row for row in midi_data_table if row[4] == 1])
+	song_with_only_note_on = np.array([row for row in dataframe if row[4] == 1])
 	# TODO: exclude 0 when getting np.min
 	song_min = np.min(song_with_only_note_on[:,6])
 	song_max = np.max(song_with_only_note_on[:,6])
 
-	for i in range(len(midi_data_table)):
-		if midi_data_table[i][4] == 1:
-			orig_power = midi_data_table[i][6]
+	for i in range(len(dataframe)):
+		if dataframe[i][4] == 1:
+			orig_power = dataframe[i][6]
 			power_percentage = translate_into_percentage(orig_power,song_min,song_max,const.SONG_BOUNDARY)
-			midi_data_table[i][6] = power_percentage
+			dataframe[i][6] = power_percentage
 			
-	return midi_data_table
+	return dataframe
 
 def read_profile(profile_path):
 	'''
