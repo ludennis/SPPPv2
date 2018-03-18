@@ -1,6 +1,7 @@
 from os import listdir
 from os.path import isdir,join
 import numpy as np
+import pandas as pd
 import const
 
 
@@ -13,26 +14,20 @@ def filter_raw_data(file_path):
 	# TODO: assert file_path is a path
 	# TODO: if row_data[3] == 3 and row_data[4] != 64
 
-	midi_data_table = []
-	with open(file_path,'r') as midi_file:
-		for line in midi_file:
-			midi_data_table.append(line.rstrip().split(','))
+	dataframe = pd.read_csv(file_path)
 
-	# convert to numpy array first
-	midi_data_table = np.array(midi_data_table,dtype=int)
+	mask = dataframe.event == 0
+	column_name = 'power'
+	dataframe.loc[mask,column_name] = 0
 
-	# TODO: change power to noteoff to 0
-	for i in range(len(midi_data_table)):
-		if midi_data_table[i][3] == 0: midi_data_table[i][5] = 0
-
-	return np.array(midi_data_table,dtype=int)
+	return dataframe
 
 
-def add_id(data):
-	data = np.insert(data,0,0,axis=1)
-	for i in range(len(data)):
-		data[i][0] = i+1
-	return data
+# def add_id(data):
+# 	data = np.insert(data,0,0,axis=1)
+# 	for i in range(len(data)):
+# 		data[i][0] = i+1
+# 	return data
 
 # TODO
 def detect_sustain():
@@ -100,30 +95,56 @@ def read_profile(profile_path):
 	'''
 	Reads the profiles in profile_path and returns a dictionary
 	profile = {'sustain'|'no_sustain':[note,low_normal_percentage,high_normal_percentage]}
+	[note,(high_power_min,high_power_max),(high_dur_min,high_dur_max),(normal_power_min,normal_power_max),(normal_dur_min,normal_power_max),(low_power_min,low_power_max)]
 	'''
 
 	# TODO: assert file_path is a path
 
 	profile = {}
-	profile['sustain'] = []
-	profile['no_sustain'] = []
 
 	num_notes_in_profile = 84
 
-	with open(profile_path+'/loud.cfg','r') as high, \
-		 open(profile_path+'/quiet_no_sus.cfg','r') as low_no_sus, \
-		 open(profile_path+'/quiet_sus.cfg','r') as low_sus:
+	with open(profile_path+'/loud.cfg','r') as loud, \
+		 open(profile_path+'/quiet_no_sus.cfg','r') as quiet_no_sus, \
+		 open(profile_path+'/quiet_sus.cfg','r') as quiet_sus:
 
-		high_content = [line.strip('\n').split(',') for line in high.readlines()]
-		low_no_sus_content = [line.strip('\n').split(',') for line in low_no_sus.readlines()]
-		low_sus_content = [line.strip('\n').split(',') for line in low_sus.readlines()]
+		loud_content = [line.strip('\n').split(',') for line in loud.readlines()]
+		quiet_no_sus_content = [line.strip('\n').split(',') for line in quiet_no_sus.readlines()]
+		quiet_sus_content = [line.strip('\n').split(',') for line in quiet_sus.readlines()]
 
-		for i in range(len(high_content)):
-			profile['sustain'].append([i+1,low_sus_content[i][3], high_content[i][3]])
-			profile['no_sustain'].append([i+1,low_no_sus_content[i][3],high_content[i][3]])
 
-		profile['sustain'] = np.array(profile['sustain'],dtype=int)
-		profile['no_sustain'] = np.array(profile['no_sustain'],dtype=int)
+		profile['sustain'] = np.copy(loud_content)
+		profile['no_sustain'] = np.copy(loud_content)
+
+	for i in range(len(loud_content)):
+		note = i + 1
+
+		# profile['sustain'][,:1] = (loud_content[,:1],quiet_sus[,:1])
+		# profile['no_sustain'][,:1] = (loud_content[,:1],quiet_no_sus[,:1])
+
+		sus_row = [(loud,quiet_sus) for loud,quiet_sus in zip(loud_content[i],quiet_sus_content[i])]
+		print (sus_row)
+
+
+		no_sus_row = [(loud,quiet_no_sus) for loud,quiet_no_sus in zip(loud_content[i],quiet_no_sus_content[i])]
+		print (no_sus_row)
+
+		# high power & dur
+		high_power_range = (high_power_min,high_max) = (1,3)
+		high_dur_range = (high_dur_min,high_dur_max) = (1,3)
+
+		# normal power & dur
+		normal_power_range = (normal_power_min, nomral_power_max) = (1,3)
+		normal_dur_range = (normal_dur_min, normal_dur_max) = (1,3)
+
+		# low power
+		low_power_range = (low_power_min, low_power_max) = (1,3)
+
+		# profile['sustain'].append([i+1,low_sus_content[i][3], high_content[i][3]])
+		# profile['no_sustain'].append([i+1,low_no_sus_content[i][3],high_content[i][3]])
+
+	profile['sustain'] = np.array(profile['sustain'],dtype=int)
+	profile['no_sustain'] = np.array(profile['no_sustain'],dtype=int)
 
 	return profile
 
