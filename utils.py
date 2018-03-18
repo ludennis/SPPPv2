@@ -101,47 +101,52 @@ def read_profile(profile_path):
 
 	num_notes_in_profile = 84
 
-	with open(profile_path+'/loud.cfg','r') as loud, \
-		 open(profile_path+'/quiet_no_sus.cfg','r') as quiet_no_sus, \
-		 open(profile_path+'/quiet_sus.cfg','r') as quiet_sus:
+	loud_df = pd.read_csv(profile_path+'/loud.csv')
+	quiet_no_sus_df = pd.read_csv(profile_path+'/quiet_no_sus.csv')
+	quiet_sus_df = pd.read_csv(profile_path+'/quiet_sus.csv')
 
-		loud_content = [line.strip('\n').split(',') for line in loud.readlines()]
-		quiet_no_sus_content = [line.strip('\n').split(',') for line in quiet_no_sus.readlines()]
-		quiet_sus_content = [line.strip('\n').split(',') for line in quiet_sus.readlines()]
+	# merge loud and quiet_sus according to index
+	merge_df = loud_df.merge(quiet_sus_df,right_index=True,left_index=True)
+	sustain_df = pd.DataFrame(columns=['note','high_power_min','high_power_max','high_dur_min','high_dur_max',\
+									   'normal_power_min','normal_power_max','normal_dur_min','normal_dur_max',\
+									   'low_power_min','low_power_max','low_dur_min','low_dur_max'])
+	
+	sustain_df['note'] = merge_df['note_x']
+	sustain_df['high_power_min'] = merge_df[['high_power_x','high_power_y']].min(axis=1)
+	sustain_df['high_power_max'] = merge_df[['high_power_x','high_power_y']].max(axis=1)
+	sustain_df['high_dur_min'] = merge_df[['high_dur_x','high_dur_y']].min(axis=1)
+	sustain_df['high_dur_max'] = merge_df[['high_dur_x','high_dur_y']].max(axis=1)
+	sustain_df['normal_power_min'] = merge_df[['normal_power_x','normal_power_y']].min(axis=1)
+	sustain_df['normal_power_max'] = merge_df[['normal_power_x','normal_power_y']].max(axis=1)
+	sustain_df['normal_dur_min'] = merge_df[['normal_dur_x','normal_dur_y']].min(axis=1)
+	sustain_df['normal_dur_max'] = merge_df[['normal_dur_x','normal_dur_y']].max(axis=1)
+	sustain_df['low_power_min'] = merge_df[['low_power_x','low_power_y']].min(axis=1)
+	sustain_df['low_power_max'] = merge_df[['low_power_x','low_power_y']].max(axis=1)
+	sustain_df['low_dur_min'] = merge_df[['low_dur_x','low_dur_y']].min(axis=1)
+	sustain_df['low_dur_max'] = merge_df[['low_dur_x','low_dur_y']].max(axis=1)
 
+	# merge loud and quiet_no_sus according to index
+	merge_df = loud_df.merge(quiet_no_sus_df,right_index=True,left_index=True)
+	no_sustain_df = pd.DataFrame(columns=['note','high_power_min','high_power_max','high_dur_min','high_dur_max',\
+									      'normal_power_min','normal_power_max','normal_dur_min','normal_dur_max',\
+									      'low_power_min','low_power_max','low_dur_min','low_dur_max'])
 
-		profile['sustain'] = np.copy(loud_content)
-		profile['no_sustain'] = np.copy(loud_content)
+	no_sustain_df['note'] = merge_df['note_x']
+	no_sustain_df['high_power_min'] = merge_df[['high_power_x','high_power_y']].min(axis=1)
+	no_sustain_df['high_power_max'] = merge_df[['high_power_x','high_power_y']].max(axis=1)
+	no_sustain_df['high_dur_min'] = merge_df[['high_dur_x','high_dur_y']].min(axis=1)
+	no_sustain_df['high_dur_max'] = merge_df[['high_dur_x','high_dur_y']].max(axis=1)
+	no_sustain_df['normal_power_min'] = merge_df[['normal_power_x','normal_power_y']].min(axis=1)
+	no_sustain_df['normal_power_max'] = merge_df[['normal_power_x','normal_power_y']].max(axis=1)
+	no_sustain_df['normal_dur_min'] = merge_df[['normal_dur_x','normal_dur_y']].min(axis=1)
+	no_sustain_df['normal_dur_max'] = merge_df[['normal_dur_x','normal_dur_y']].max(axis=1)
+	no_sustain_df['low_power_min'] = merge_df[['low_power_x','low_power_y']].min(axis=1)
+	no_sustain_df['low_power_max'] = merge_df[['low_power_x','low_power_y']].max(axis=1)
+	no_sustain_df['low_dur_min'] = merge_df[['low_dur_x','low_dur_y']].min(axis=1)
+	no_sustain_df['low_dur_max'] = merge_df[['low_dur_x','low_dur_y']].max(axis=1)
 
-	for i in range(len(loud_content)):
-		note = i + 1
-
-		# profile['sustain'][,:1] = (loud_content[,:1],quiet_sus[,:1])
-		# profile['no_sustain'][,:1] = (loud_content[,:1],quiet_no_sus[,:1])
-
-		sus_row = [(loud,quiet_sus) for loud,quiet_sus in zip(loud_content[i],quiet_sus_content[i])]
-		print (sus_row)
-
-
-		no_sus_row = [(loud,quiet_no_sus) for loud,quiet_no_sus in zip(loud_content[i],quiet_no_sus_content[i])]
-		print (no_sus_row)
-
-		# high power & dur
-		high_power_range = (high_power_min,high_max) = (1,3)
-		high_dur_range = (high_dur_min,high_dur_max) = (1,3)
-
-		# normal power & dur
-		normal_power_range = (normal_power_min, nomral_power_max) = (1,3)
-		normal_dur_range = (normal_dur_min, normal_dur_max) = (1,3)
-
-		# low power
-		low_power_range = (low_power_min, low_power_max) = (1,3)
-
-		# profile['sustain'].append([i+1,low_sus_content[i][3], high_content[i][3]])
-		# profile['no_sustain'].append([i+1,low_no_sus_content[i][3],high_content[i][3]])
-
-	profile['sustain'] = np.array(profile['sustain'],dtype=int)
-	profile['no_sustain'] = np.array(profile['no_sustain'],dtype=int)
+	profile['sustain'] = sustain_df
+	profile['no_sustain'] = no_sustain_df
 
 	return profile
 

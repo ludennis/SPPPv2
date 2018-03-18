@@ -27,7 +27,12 @@ if __name__ == '__main__':
 		with pd.option_context('display.max_rows',None):
 			file.write(midi_percentage.__repr__())
 
-	# profile = utils.read_profile(args.profile)
+	profile = utils.read_profile(args.profile)
+	with open('./tables/0_profile_sustain.txt', 'w') as sus_file, \
+		 open('./tables/0_profile_no_sustain.txt', 'w') as no_sus_file:
+		 with pd.option_context('display.max_rows',None,'expand_frame_repr',False):
+		 	sus_file.write(profile['sustain'].__repr__())
+		 	no_sus_file.write(profile['no_sustain'].__repr__())
 
 	# processed_midi_data = utils.apply_profile(midi_percentage,profile)
 	# np.savetxt('./tables/4_processed_midi_data.txt',processed_midi_data,fmt='% 4d')
@@ -35,5 +40,5 @@ if __name__ == '__main__':
 	# processed_sorted_by_note = utils.sort_by_note(processed_midi_data)
 	# np.savetxt('./tables/5_processed_sorted_by_note.txt', processed_sorted_by_note,fmt='% 4d')
 
-	print ('args.midi_input: {}'.format(args.midi_input))
-	print ('args.p: {}'.format(args.profile))
+	print ('args.midi_input: {}'.format('./'+args.midi_input))
+	print ('args.p: {}'.format('./'+args.profile))
