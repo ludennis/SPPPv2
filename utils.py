@@ -86,6 +86,7 @@ def map_midi_to_percentage(df):
 			power_percentage = translate_into_percentage(orig_power,song_min,song_max,const.SONG_BOUNDARY)
 			df.loc[index]['power'] = power_percentage
 			
+	df = df.rename(index=str,columns={'power':'percentage'})
 	return df
 
 def read_profile(profile_path):
@@ -150,7 +151,7 @@ def read_profile(profile_path):
 
 	return profile
 
-def apply_profile(data,profile):
+def apply_profile(df,profile):
 	'''
 	map profile's power to percentage
 	'''
@@ -159,18 +160,20 @@ def apply_profile(data,profile):
 	# profile['sustain'] => [note,low,high] => [ 50, 108, 143]
 	# profile['no_sustain'] => [note,low,high] => [ 50, 113, 143]
 
-	for row in data:
-		if row[4] == 1:
-			note = row[5]
-			low_normal_power = profile['sustain'][note][1] if row[7] == 1 else \
-							   profile['no_sustain'][note][1]
-			high_normal_power = profile['sustain'][note][2] if row[7] == 1 else \
-								profile['no_sustain'][note][2]
-			power_range = high_normal_power - low_normal_power
-			note_percentage = row[6]
-			row[6] = low_normal_power + power_range * note_percentage / 100
-	return data
+	for index, row in df.iterrows():
+		if row['event'] == 1:
+			note = row['note']
+			quiet_normal_power = profile['sustain'].loc[note]['normal_power_min'] if row['sustain'] == 1 else \
+				   			     profile['no_sustain'].loc[note]['normal_power_min']
+			loud_normal_power = profile['sustain'].loc[note]['normal_power_max'] if row['sustain'] == 1 else \
+								profile['no_sustain'].loc[note]['normal_power_max']
+			power_range = loud_normal_power - quiet_normal_power
+			note_percentage = row['percentage']
+			df.loc[index]['percentage'] = int(quiet_normal_power + power_range * note_percentage / 100.0)
 
-def sort_by_note(data):
-	data = sorted(data, key = lambda x: (x[5],x[1]))
-	return np.array(data,dtype=int)
+	df = df.rename(index=str,columns={'percentage':'power'})
+	return df
+
+def sort_by_note(df):
+	df = df.sort_values(by=['note','timestamp'])
+	return df
