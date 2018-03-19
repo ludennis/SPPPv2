@@ -42,8 +42,7 @@ def add_sustain_column(df):
 			else:
 				sustain_flag = False
 			continue
-		if row['event'] == 1 and row['midi_value'] > 0:
-			df.loc[index]['sustain'] = 1 if sustain_flag == True else 0
+		df.loc[index]['sustain'] = 1 if sustain_flag == True else 0
 
 	return df
 
