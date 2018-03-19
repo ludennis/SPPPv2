@@ -17,7 +17,7 @@ def filter_raw_data(file_path):
 	df = pd.read_csv(file_path)
 
 	mask = df.event == 0
-	column_name = 'power'
+	column_name = 'midi_value'
 	df.loc[mask,column_name] = 0
 
 	return df
@@ -37,12 +37,12 @@ def add_sustain_column(df):
 	sustain_flag = False
 	for index,row in df.iterrows():
 		if row['event'] == 3 and row['note'] == 64:
-			if row['power'] > 0:
+			if row['midi_value'] > 0:
 				sustain_flag = True
 			else:
 				sustain_flag = False
 			continue
-		if row['event'] == 1 and row['power'] > 0:
+		if row['event'] == 1 and row['midi_value'] > 0:
 			df.loc[index]['sustain'] = 1 if sustain_flag == True else 0
 
 	return df
@@ -77,16 +77,16 @@ def map_midi_to_percentage(df):
 	song_with_only_note_on = df.loc[df['event']==1]
 	# song_with_only_note_on = np.array([row for row in df if row[4] == 1])
 	# TODO: exclude 0 when getting np.min
-	song_min = song_with_only_note_on['power'].min()
-	song_max = song_with_only_note_on['power'].max()
+	song_min = song_with_only_note_on['midi_value'].min()
+	song_max = song_with_only_note_on['midi_value'].max()
 
 	for index,row in df.iterrows():
 		if row['event'] == 1:
-			orig_power = row['power']
+			orig_power = row['midi_value']
 			power_percentage = translate_into_percentage(orig_power,song_min,song_max,const.SONG_BOUNDARY)
-			df.loc[index]['power'] = power_percentage
+			df.loc[index]['midi_value'] = power_percentage
 			
-	df = df.rename(index=str,columns={'power':'percentage'})
+	df = df.rename(index=str,columns={'midi_value':'midi_percentage'})
 	return df
 
 def read_profile(profile_path):
@@ -168,10 +168,10 @@ def apply_profile(df,profile):
 			loud_normal_power = profile['sustain'].loc[note]['normal_power_max'] if row['sustain'] == 1 else \
 								profile['no_sustain'].loc[note]['normal_power_max']
 			power_range = loud_normal_power - quiet_normal_power
-			note_percentage = row['percentage']
-			df.loc[index]['percentage'] = int(quiet_normal_power + power_range * note_percentage / 100.0)
+			note_percentage = row['midi_percentage']
+			df.loc[index]['midi_percentage'] = int(quiet_normal_power + power_range * note_percentage / 100.0)
 
-	df = df.rename(index=str,columns={'percentage':'power'})
+	df = df.rename(index=str,columns={'midi_percentage':'profile_power'})
 	return df
 
 def sort_by_note(df):
