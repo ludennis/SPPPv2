@@ -1,4 +1,4 @@
-timestamp,track,channel,event,note,power
+timestamp,track,channel,event,note,midi_value
 9795,1,0,1,76,110
 9795,2,1,1,47,116
 10051,1,0,0,76,64

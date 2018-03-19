@@ -1,4 +1,4 @@
-timestamp,track,channel,event,note,power
+timestamp,track,channel,event,note,midi_value
 1000,0,0,1,50,50
 1999,0,0,0,50,0
 2000,0,0,1,50,50
