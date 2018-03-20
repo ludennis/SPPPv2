@@ -16,6 +16,9 @@ def filter_raw_data(file_path):
 
 	df = pd.read_csv(file_path)
 
+	'''
+	This mask what needs to be filtered in the column
+	'''
 	mask = df.event == 0
 	column_name = 'midi_value'
 	df.loc[mask,column_name] = 0
@@ -23,6 +26,10 @@ def filter_raw_data(file_path):
 	return df
 
 def add_id(df):
+	'''
+	Adds a column of id. This is the same as index, but becuase index is harder to call from,
+	a column of id is added for convenience.
+	'''
 	df['id'] = pd.Series(np.arange(df.shape[0],dtype=int))
 	cols = ['id','timestamp','track','channel','event','note','midi_value']
 	df = df[cols]
@@ -34,12 +41,14 @@ def detect_sustain():
 
 def add_sustain_column(df):
 	'''
-	add a sustain column to the table for each note on
+	Adds a sustain column to the table. Sustain is one after sustain_flag detects sustain, zero 
+	when sustain_flag is False.
 	'''
+
 	# add a column of zeroes in data
 	df['sustain'] = pd.Series(np.zeros(df.shape[0],dtype=int))
 
-	# detect sustain
+	# detect sustain and change accordingly
 	sustain_flag = False
 	for index,row in df.iterrows():
 		if row['event'] == 3 and row['note'] == 64:
@@ -54,7 +63,8 @@ def add_sustain_column(df):
 
 def translate_into_percentage(value,old_min,old_max,song_range=(0,100)):
 	'''
-	Translate and return a value to be a percentage [1,100]
+	Auxiliary function used by 'map_midi_to_percentage()'.
+	Translates and returns a midi_value to a percentage in the range of [1,100]
 	'''
 
 	old_range = old_max - old_min
@@ -70,8 +80,9 @@ def translate_into_percentage(value,old_min,old_max,song_range=(0,100)):
 
 def map_midi_to_percentage(df):
 	'''
-	Maps the power to [new_min,new_max] (default to [1,100])
-	Updates the midi_data_table and returns
+	Maps the midi_value to a rnage of [1,100]
+	finds the minimum and maximum midi_values from the whole song
+	uses auxiliary function 'translate_into_percentage()' 
 	'''
 
 	# <Time, track number, MIDI channel, type, key, value>
@@ -96,7 +107,9 @@ def map_midi_to_percentage(df):
 
 def read_profile(profile_path):
 	'''
-	Reads the profiles in profile_path and returns a dictionary
+	Reads profile files and returns a dictionary of two profile dataframes
+	Merges 'loud.csv' & 'quiet_no_sus.csv' and find min/max for each column
+	Merges 'loud.csv' & 'quiet_sus.csv' and find min/max for each column
 	profile = {'sustain'|'no_sustain':[note,low_normal_percentage,high_normal_percentage]}
 	[note,(high_power_min,high_power_max),(high_dur_min,high_dur_max),(normal_power_min,normal_power_max),(normal_dur_min,normal_power_max),(low_power_min,low_power_max)]
 	'''
@@ -105,8 +118,7 @@ def read_profile(profile_path):
 
 	profile = {}
 
-	num_notes_in_profile = 84
-
+	# read all profile files into dataframes
 	loud_df = pd.read_csv(profile_path+'/loud.csv')
 	quiet_no_sus_df = pd.read_csv(profile_path+'/quiet_no_sus.csv')
 	quiet_sus_df = pd.read_csv(profile_path+'/quiet_sus.csv')
@@ -117,6 +129,8 @@ def read_profile(profile_path):
 									   'normal_power_min','normal_power_max','normal_dur_min','normal_dur_max',\
 									   'low_power_min','low_power_max','low_dur_min','low_dur_max'])
 	
+	# sustain
+	# manually find min and max according to each column within the merge dataframe
 	sustain_df['note'] = merge_df['note_x']
 	sustain_df['high_power_min'] = merge_df[['high_power_x','high_power_y']].min(axis=1)
 	sustain_df['high_power_max'] = merge_df[['high_power_x','high_power_y']].max(axis=1)
@@ -137,6 +151,7 @@ def read_profile(profile_path):
 									      'normal_power_min','normal_power_max','normal_dur_min','normal_dur_max',\
 									      'low_power_min','low_power_max','low_dur_min','low_dur_max'])
 
+	# no_sustain
 	no_sustain_df['note'] = merge_df['note_x']
 	no_sustain_df['high_power_min'] = merge_df[['high_power_x','high_power_y']].min(axis=1)
 	no_sustain_df['high_power_max'] = merge_df[['high_power_x','high_power_y']].max(axis=1)
@@ -151,6 +166,7 @@ def read_profile(profile_path):
 	no_sustain_df['low_dur_min'] = merge_df[['low_dur_x','low_dur_y']].min(axis=1)
 	no_sustain_df['low_dur_max'] = merge_df[['low_dur_x','low_dur_y']].max(axis=1)
 
+	# store both dataframes into a dictionary
 	profile['sustain'] = sustain_df
 	profile['no_sustain'] = no_sustain_df
 
@@ -158,28 +174,35 @@ def read_profile(profile_path):
 
 def apply_profile(df,profile):
 	'''
-	map profile's power to percentage
+	apply the percentage with profile
+	will apply the profile according to the sustain column
+	retrieves normal_power_min and normal_power_max from profiles
 	'''
 	#  [16300     0     0     1    50    50     1]
 
 	# profile['sustain'] => [note,low,high] => [ 50, 108, 143]
 	# profile['no_sustain'] => [note,low,high] => [ 50, 113, 143]
 
+	# iterates each row in dataframe and finds the normal_power min/max in profile according to the note
+	# finds both the range of the power and the midi_percentage and maps with a new range
 	for index, row in df.iterrows():
 		if row['event'] == 1:
 			note = row['note']
-			quiet_normal_power = profile['sustain'].loc[note]['normal_power_min'] if row['sustain'] == 1 else \
+			normal_power_min = profile['sustain'].loc[note]['normal_power_min'] if row['sustain'] == 1 else \
 				   			     profile['no_sustain'].loc[note]['normal_power_min']
-			loud_normal_power = profile['sustain'].loc[note]['normal_power_max'] if row['sustain'] == 1 else \
+			normal_power_max = profile['sustain'].loc[note]['normal_power_max'] if row['sustain'] == 1 else \
 								profile['no_sustain'].loc[note]['normal_power_max']
-			power_range = loud_normal_power - quiet_normal_power
+			power_range = normal_power_max - normal_power_min
 			note_percentage = row['midi_percentage']
-			df.loc[index]['midi_percentage'] = int(quiet_normal_power + power_range * note_percentage / 100.0)
+			df.loc[index]['midi_percentage'] = int(normal_power_min + power_range * note_percentage / 100.0)
 
 	df = df.rename(index=str,columns={'midi_percentage':'profile_power'})
 	return df
 
 def sort_by_note(df):
+	'''
+	sorts the dataframe by notes and then timestamp
+	'''
 	df = df.sort_values(by=['note','timestamp'])
 	return df
 
@@ -188,9 +211,21 @@ def remove_overlap(df):
 	'''
 	finds notes that have the same note on and deletes the one that has
 	a lower profile_power
+	also deletes the note off
+	TODO: to find multiple note on's 
+	Later this will include a threshold instead of finding the same timestamp
+	Later this will scan a number of notes in a threshold and deal with multiple note on's.
 	'''
+
+	# creates a list of id's that will be dropped using flag `del_next_note_off`
 	n_rows = df.shape[0]
-	drop_indexes = []
+	drop_ids = []
+	del_next_note_off = False
+
+	# for every row and the next row, finds any consecutive note that shares the same timestamp
+	# then turns on `del_next_note_off` add the next note off id into `drop_ids` for deletion
+	# when two consecutive note on shares the same timestamp, the one with lower `profile_power` 
+	# is added to `drop_ids`
 	for i in range(n_rows):
 		if i+1 < n_rows:
 			cur_row = df.iloc[i]
@@ -198,9 +233,17 @@ def remove_overlap(df):
 			if cur_row['timestamp'] == next_row['timestamp']:
 				print ('Found overlap:\n{}'.format(cur_row))
 				if cur_row['profile_power'] > next_row['profile_power']:
-					drop_indexes.append(cur_row['id'])
+					drop_ids.append(cur_row['id'])
 				else:
-					drop_idnexes.append(next_row['id'])
-	for drop_id in drop_indexes:
+					drop_ids.append(next_row['id'])
+				del_next_note_off = True
+		if del_next_note_off and cur_row['event'] == 0:
+			print ('Delete note off:\n{}'.format(cur_row))
+			drop_ids.append(cur_row['id'])
+			del_next_note_off = False
+
+	# drops all the ids in drop_ids
+	# this is to prevent any logic error while iterating over the rows
+	for drop_id in drop_ids:
 		df = df.drop(df[df.id == drop_id].index)
 	return df
