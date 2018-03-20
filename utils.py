@@ -22,6 +22,12 @@ def filter_raw_data(file_path):
 
 	return df
 
+def add_id(df):
+	df['id'] = pd.Series(np.arange(df.shape[0],dtype=int))
+	cols = ['id','timestamp','track','channel','event','note','midi_value']
+	df = df[cols]
+	return df
+
 # TODO
 def detect_sustain():
 	pass
@@ -31,7 +37,7 @@ def add_sustain_column(df):
 	add a sustain column to the table for each note on
 	'''
 	# add a column of zeroes in data
-	df['sustain'] = pd.Series(np.zeros(df.shape[0],dtype=int),index=df.index)
+	df['sustain'] = pd.Series(np.zeros(df.shape[0],dtype=int))
 
 	# detect sustain
 	sustain_flag = False
@@ -175,4 +181,26 @@ def apply_profile(df,profile):
 
 def sort_by_note(df):
 	df = df.sort_values(by=['note','timestamp'])
+	return df
+
+
+def remove_overlap(df):
+	'''
+	finds notes that have the same note on and deletes the one that has
+	a lower profile_power
+	'''
+	n_rows = df.shape[0]
+	drop_indexes = []
+	for i in range(n_rows):
+		if i+1 < n_rows:
+			cur_row = df.iloc[i]
+			next_row = df.iloc[i+1]
+			if cur_row['timestamp'] == next_row['timestamp']:
+				print ('Found overlap:\n{}'.format(cur_row))
+				if cur_row['profile_power'] > next_row['profile_power']:
+					drop_indexes.append(cur_row['id'])
+				else:
+					drop_idnexes.append(next_row['id'])
+	for drop_id in drop_indexes:
+		df = df.drop(df[df.id == drop_id].index)
 	return df
