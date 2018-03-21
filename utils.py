@@ -207,7 +207,7 @@ def sort_by_note(df):
 	return df
 
 
-def remove_overlap(df):
+def note_on_spacing_threshold(df):
 	'''
 	finds notes that have the same note on and deletes the one that has
 	a lower profile_power
@@ -220,30 +220,54 @@ def remove_overlap(df):
 	# creates a list of id's that will be dropped using flag `del_next_note_off`
 	n_rows = df.shape[0]
 	drop_ids = []
-	del_next_note_off = False
+	del_next_note_off = 0
 
 	# for every row and the next row, finds any consecutive note that shares the same timestamp
 	# then turns on `del_next_note_off` add the next note off id into `drop_ids` for deletion
 	# when two consecutive note on shares the same timestamp, the one with lower `profile_power` 
 	# is added to `drop_ids`
+	# uses const.OVERLAP_THRESHOLD
+
+	# TODO: to add muliple notes 
+	# when note on's are within const.OVERLAP_THRESHOLD 
+	# then keep highest profile power, delete other note on's and note off's
+	# iterate through each note on's and find as many notes as there are that's within OVERLAP_THRESHOLD
+	# delete the other note on's and store the number of notes deleted, then delete the same number of note off's
+
 	for i in range(n_rows):
 		if i+1 < n_rows:
 			cur_row = df.iloc[i]
-			next_row = df.iloc[i+1]
-			if cur_row['timestamp'] == next_row['timestamp']:
-				print ('Found overlap:\n{}'.format(cur_row))
-				if cur_row['profile_power'] > next_row['profile_power']:
-					drop_ids.append(cur_row['id'])
-				else:
-					drop_ids.append(next_row['id'])
-				del_next_note_off = True
-		if del_next_note_off and cur_row['event'] == 0:
-			print ('Delete note off:\n{}'.format(cur_row))
+			if cur_row['event'] == 1: 
+				cur_note_on = cur_row
+				for j in range(i+1,n_rows,1):
+					next_row = df.iloc[j]
+					if next_row['event'] == 1 and next_row['note'] == cur_note_on['note'] and next_row['id']!=cur_note_on['id'] :
+						next_note_on = next_row
+						if abs(cur_row['timestamp'] - next_note_on['timestamp']) < const.OVERLAP_THRESHOLD:
+							print ('Found overlap:\n{}\n{}'.format(cur_row.to_frame().T,next_note_on.to_frame().T))
+							if cur_row['profile_power'] > next_note_on['profile_power']:
+								drop_ids.append(next_note_on['id'])
+								print ('Deleting note on:\n{}'.format(next_note_on.to_frame().T))
+							else:
+								drop_ids.append(cur_note_on['id'])
+								print ('Deleting note on:\n{}'.format(cur_note_on.to_frame().T))
+							del_next_note_off += 1
+						break;
+					else: 
+						# cannot find next note on
+						continue
+		if del_next_note_off > 0 and cur_row['event'] == 0:
+			print ('Deleting note off:\n{}\n\n'.format(cur_row.to_frame().T))
 			drop_ids.append(cur_row['id'])
-			del_next_note_off = False
+			del_next_note_off -= 1
 
 	# drops all the ids in drop_ids
 	# this is to prevent any logic error while iterating over the rows
 	for drop_id in drop_ids:
 		df = df.drop(df[df.id == drop_id].index)
+
+	# TODO: check for songs to see if the whole song have the same number of note on and note off
+
+
+
 	return df
