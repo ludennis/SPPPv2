@@ -245,23 +245,25 @@ def note_on_spacing_threshold(df):
 						next_note_on = next_row
 						if abs(cur_note_on['timestamp'] - next_note_on['timestamp']) < const.OVERLAP_THRESHOLD:
 							print ('Found overlap:\n{}\n{}'.format(cur_note_on.to_frame().T,next_note_on.to_frame().T))
+							del_next_note_off += 1
 							if cur_note_on['profile_power'] == next_note_on['profile_power']:
 								drop_ids.append(next_note_on['id'])
+								print ('Deleting note on:\n{}'.format(next_note_on.to_frame().T))
 							elif cur_note_on['profile_power'] > next_note_on['profile_power']:
 								drop_ids.append(next_note_on['id'])
 								print ('Deleting note on:\n{}'.format(next_note_on.to_frame().T))
 							else:
 								drop_ids.append(cur_note_on['id'])
 								print ('Deleting note on:\n{}'.format(cur_note_on.to_frame().T))
-							del_next_note_off += 1
 						break;
 					else: 
 						# cannot find next note on
 						continue
-		if del_next_note_off > 0 and cur_note_on['event'] == 0:
-			print ('Deleting note off:\n{}\n\n'.format(cur_note_on.to_frame().T))
-			drop_ids.append(cur_note_on['id'])
-			del_next_note_off -= 1
+			else:
+				if del_next_note_off > 0 and cur_row['event'] == 0:
+					print ('Deleting note off:\n{}\n'.format(cur_note_on.to_frame().T))
+					drop_ids.append(cur_row['id'])
+					del_next_note_off -= 1
 
 	# drops all the ids in drop_ids
 	# this is to prevent any logic error while iterating over the rows
@@ -269,7 +271,16 @@ def note_on_spacing_threshold(df):
 		df = df.drop(df[df.id == drop_id].index)
 
 	# TODO: check for songs to see if the whole song have the same number of note on and note off
+	n_note_on = sum([1 for index,row in df.iterrows() if row['event']==1])
+	n_note_off = sum([1 for index,row in df.iterrows() if row['event']==0])
 
+	n_note_on = sum([1 for index,row in df.iterrows() if row['event']==1])
+	n_note_off = sum([1 for index,row in df.iterrows() if row['event']==0])
+	print ('After deletion: number of note on\'s ({}), number of note off\'s ({})'.format(n_note_on,n_note_off))
+
+
+	assert n_note_on == n_note_off, \
+		'number of note on({}) != number of note off ({})'.format(n_note_on,n_note_off)
 
 
 	return df

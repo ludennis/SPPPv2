@@ -28,25 +28,25 @@ if __name__ == '__main__':
 
 	note_on_spacing = utils.note_on_spacing_threshold(processed_sorted_by_note)
 
-	with pd.option_context('display.max_rows',None,'expand_frame_repr',False):
-		with open('./tables/1_filtered_raw_midi_data.txt','w') as file:
-			file.write(filtered_raw_midi_data.__repr__())
-		with open('./tables/2_id_midi_data.txt','w') as file:
-			file.write(id_midi_data.__repr__())
-		with open('./tables/3_midi_with_sustain_column.txt','w') as file:
-			file.write(midi_with_sustain_column.__repr__())
-		with open('./tables/4_midi_percentage.txt','w') as file:
-			file.write(midi_percentage.__repr__())
-		with open('./tables/0_profile_sustain.txt', 'w') as sus_file, \
-			 open('./tables/0_profile_no_sustain.txt', 'w') as no_sus_file:
-		 	sus_file.write(profile['sustain'].__repr__())
-		 	no_sus_file.write(profile['no_sustain'].__repr__())
-		with open('./tables/5_processed_midi_data.txt','w') as file:
-			file.write(processed_midi_data.__repr__())
-		with open('./tables/6_processed_sorted_by_note.txt','w') as file:
-			file.write(processed_sorted_by_note.__repr__())
-		with open('./tables/76_note_on_spacing.txt','w') as file:
-			file.write(note_on_spacing.__repr__())
+	# with pd.option_context('display.max_rows',None,'expand_frame_repr',False):
+	# 	with open('./tables/1_filtered_raw_midi_data.txt','w') as file:
+	# 		file.write(filtered_raw_midi_data.__repr__())
+	# 	with open('./tables/2_id_midi_data.txt','w') as file:
+	# 		file.write(id_midi_data.__repr__())
+	# 	with open('./tables/3_midi_with_sustain_column.txt','w') as file:
+	# 		file.write(midi_with_sustain_column.__repr__())
+	# 	with open('./tables/4_midi_percentage.txt','w') as file:
+	# 		file.write(midi_percentage.__repr__())
+	# 	with open('./tables/0_profile_sustain.txt', 'w') as sus_file, \
+	# 		 open('./tables/0_profile_no_sustain.txt', 'w') as no_sus_file:
+	# 	 	sus_file.write(profile['sustain'].__repr__())
+	# 	 	no_sus_file.write(profile['no_sustain'].__repr__())
+	# 	with open('./tables/5_processed_midi_data.txt','w') as file:
+	# 		file.write(processed_midi_data.__repr__())
+	# 	with open('./tables/6_processed_sorted_by_note.txt','w') as file:
+	# 		file.write(processed_sorted_by_note.__repr__())
+	# 	with open('./tables/76_note_on_spacing.txt','w') as file:
+	# 		file.write(note_on_spacing.__repr__())
 
 	print ('args.midi_input: {}'.format('./'+args.midi_input))
 	print ('args.p: {}'.format('./'+args.profile))
