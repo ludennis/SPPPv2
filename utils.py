@@ -246,7 +246,7 @@ def note_on_spacing_threshold(df):
 						if abs(cur_note_on['timestamp'] - next_note_on['timestamp']) < const.OVERLAP_THRESHOLD:
 							print ('Found overlap:\n{}\n{}'.format(cur_note_on.to_frame().T,next_note_on.to_frame().T))
 							if cur_note_on['profile_power'] == next_note_on['profile_power']:
-								drop_ids.append(cur_note_on['id'])
+								drop_ids.append(next_note_on['id'])
 							elif cur_note_on['profile_power'] > next_note_on['profile_power']:
 								drop_ids.append(next_note_on['id'])
 								print ('Deleting note on:\n{}'.format(next_note_on.to_frame().T))
