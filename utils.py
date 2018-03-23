@@ -284,7 +284,8 @@ def note_on_spacing_threshold(df):
 	return df
 
 
-
+def remove_overlap(df):
+	pass
 
 # TODO: To finish this
 def ensure_min_gap(df):
