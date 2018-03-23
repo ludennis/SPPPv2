@@ -243,9 +243,11 @@ def note_on_spacing_threshold(df):
 					next_row = df.iloc[j]
 					if next_row['event'] == 1 and next_row['note'] == cur_note_on['note'] and next_row['id']!=cur_note_on['id'] :
 						next_note_on = next_row
-						if abs(cur_row['timestamp'] - next_note_on['timestamp']) < const.OVERLAP_THRESHOLD:
-							print ('Found overlap:\n{}\n{}'.format(cur_row.to_frame().T,next_note_on.to_frame().T))
-							if cur_row['profile_power'] > next_note_on['profile_power']:
+						if abs(cur_note_on['timestamp'] - next_note_on['timestamp']) < const.OVERLAP_THRESHOLD:
+							print ('Found overlap:\n{}\n{}'.format(cur_note_on.to_frame().T,next_note_on.to_frame().T))
+							if cur_note_on['profile_power'] == next_note_on['profile_power']:
+								drop_ids.append(cur_note_on['id'])
+							elif cur_note_on['profile_power'] > next_note_on['profile_power']:
 								drop_ids.append(next_note_on['id'])
 								print ('Deleting note on:\n{}'.format(next_note_on.to_frame().T))
 							else:
@@ -256,9 +258,9 @@ def note_on_spacing_threshold(df):
 					else: 
 						# cannot find next note on
 						continue
-		if del_next_note_off > 0 and cur_row['event'] == 0:
-			print ('Deleting note off:\n{}\n\n'.format(cur_row.to_frame().T))
-			drop_ids.append(cur_row['id'])
+		if del_next_note_off > 0 and cur_note_on['event'] == 0:
+			print ('Deleting note off:\n{}\n\n'.format(cur_note_on.to_frame().T))
+			drop_ids.append(cur_note_on['id'])
 			del_next_note_off -= 1
 
 	# drops all the ids in drop_ids

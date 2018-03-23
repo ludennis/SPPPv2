@@ -45,7 +45,7 @@ if __name__ == '__main__':
 			file.write(processed_midi_data.__repr__())
 		with open('./tables/6_processed_sorted_by_note.txt','w') as file:
 			file.write(processed_sorted_by_note.__repr__())
-		with open('./tables/7_note_on_spacing.txt','w') as file:
+		with open('./tables/76_note_on_spacing.txt','w') as file:
 			file.write(note_on_spacing.__repr__())
 
 	print ('args.midi_input: {}'.format('./'+args.midi_input))
