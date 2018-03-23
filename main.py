@@ -28,6 +28,8 @@ if __name__ == '__main__':
 
 	note_on_spacing = utils.note_on_spacing_threshold(processed_sorted_by_note)
 
+	optimize_ensure_min_gap = utils.ensure_min_gap(note_on_spacing)
+
 	# with pd.option_context('display.max_rows',None,'expand_frame_repr',False):
 	# 	with open('./tables/1_filtered_raw_midi_data.txt','w') as file:
 	# 		file.write(filtered_raw_midi_data.__repr__())

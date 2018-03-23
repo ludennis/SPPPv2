@@ -278,9 +278,50 @@ def note_on_spacing_threshold(df):
 	n_note_off = sum([1 for index,row in df.iterrows() if row['event']==0])
 	print ('After deletion: number of note on\'s ({}), number of note off\'s ({})'.format(n_note_on,n_note_off))
 
-
 	assert n_note_on == n_note_off, \
 		'number of note on({}) != number of note off ({})'.format(n_note_on,n_note_off)
 
-
 	return df
+
+
+
+
+# TODO: To finish this
+def ensure_min_gap(df):
+	'''
+	Checks each gap between two notes and ensure the gap is at least const.MIN_GAP
+	'''
+
+	n_rows = df.shape[0]
+
+	# iterates through df and finds note off --- note on pair to check gap
+	for i in range(n_rows):
+		if i+1 < n_rows:
+			cur_row = df.iloc[i]
+			if cur_row['event']==1:
+				cur_note_on = cur_row
+				note = cur_note_on['note']
+
+				cur_note_off = df.iloc[i+1]
+				next_note_on = df.iloc[i+2]
+
+				if cur_note_off['note'] == note and next_note_on['note'] == note and \
+				   cur_note_off['event'] == 0 and next_note_on['event'] == 1:
+					gap = next_note_on['timestamp'] - cur_note_off['timestamp']
+					dur = cur_note_off['timestamp'] - cur_note_on['timestamp']
+					if gap < const.MIN_GAP:
+						print ('Gap ({}) < MIN_GAP({}) with note dur ({})'.format(gap,const.MIN_GAP,dur))
+						print ('cur_note_on:\n{}'.format(cur_note_on.to_frame().T))
+						print ('cur_note_off:\n{}'.format(cur_note_off.to_frame().T))
+						print ('next_note_on:\n{}'.format(next_note_on.to_frame().T))
+						print ()
+
+						if next_note_on['timestamp'] - gap > cur_note_on['timestamp']:
+							df.iloc[cur_note_off['id']]['timestamp'] = next_note_on['timestamp'] - gap
+						cur_note_off = df.iloc[cur_note_off['id']]
+						print ('cur_note_off changed to:\n{}'.format(cur_note_off.to_frame().T))
+
+
+
+
+
