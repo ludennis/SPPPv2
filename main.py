@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
 	#optimize_ensure_min_gap = utils.ensure_min_gap(note_on_spacing)
 
-	# with pd.option_context('display.max_rows',None,'expand_frame_repr',False):
+	with pd.option_context('display.max_rows',None,'expand_frame_repr',False):
 	# 	with open('./tables/1_filtered_raw_midi_data.txt','w') as file:
 	# 		file.write(filtered_raw_midi_data.__repr__())
 	# 	with open('./tables/2_id_midi_data.txt','w') as file:
@@ -47,10 +47,12 @@ if __name__ == '__main__':
 	# 	 	no_sus_file.write(profile['no_sustain'].__repr__())
 	# 	with open('./tables/5_processed_midi_data.txt','w') as file:
 	# 		file.write(processed_midi_data.__repr__())
-	# 	with open('./tables/6_processed_sorted_by_note.txt','w') as file:
-	# 		file.write(processed_sorted_by_note.__repr__())
-	# 	with open('./tables/76_note_on_spacing.txt','w') as file:
-	# 		file.write(note_on_spacing.__repr__())
+		with open('./tables/6_processed_sorted_by_note.txt','w') as file:
+			file.write(processed_sorted_by_note.__repr__())
+		with open('./tables/7_note_on_spacing.txt','w') as file:
+			file.write(note_on_spacing.__repr__())
+		with open('./tables/8_removed_overlap.txt','w') as file:
+			file.write(removed_overlap.__repr__())
 
 	print ('args.midi_input: {}'.format('./'+args.midi_input))
 	print ('args.p: {}'.format('./'+args.profile))

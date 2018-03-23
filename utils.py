@@ -285,7 +285,23 @@ def note_on_spacing_threshold(df):
 
 
 def remove_overlap(df):
-	pass
+	n_rows = df.shape[0]
+	for i in range(n_rows):
+		if i+2 < n_rows:
+			cur_row = df.iloc[i]
+			if cur_row['event'] == 1:
+				cur_note_on = cur_row
+				note = cur_note_on['note']
+
+				# find if there's an overlap
+				# an overlap happens when the event of 3 notes are 1,1,0
+				if df.iloc[i+1]['note'] == note and df.iloc[i+2]['note'] == note and \
+				   df.iloc[i+1]['event'] == 1 and df.iloc[i+2]['event'] == 0:
+					df.iloc[i+2]['timestamp'] = cur_note_on['timestamp'] + 1
+					assert df.iloc[i+2]['timestamp'] < df.iloc[i+1]['timestamp'],\
+						   'Overlap still exists at index {} with timestamp {}'.format(i+2,df.iloc[i+2]['timestamp'])   
+
+	return sort_by_note(df)
 
 # TODO: To finish this
 def ensure_min_gap(df):
@@ -297,7 +313,7 @@ def ensure_min_gap(df):
 
 	# iterates through df and finds note off --- note on pair to check gap
 	for i in range(n_rows):
-		if i+1 < n_rows:
+		if i+2 < n_rows:
 			cur_row = df.iloc[i]
 			if cur_row['event']==1:
 				cur_note_on = cur_row
