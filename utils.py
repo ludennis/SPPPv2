@@ -308,6 +308,8 @@ def ensure_min_gap(df):
 	'''
 	Checks each gap between two notes and ensure the gap is at least const.MIN_GAP
 	'''
+	
+	# TODO: Try to use df.shift df.at to find gap and dur for each note
 
 	n_rows = df.shape[0]
 
