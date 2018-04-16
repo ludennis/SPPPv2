@@ -4,6 +4,9 @@ import numpy as np
 import pandas as pd
 import const
 
+'''
+to modify a row use df.loc[df.index[i],'timestamp'] = ...
+'''
 
 def filter_raw_data(file_path):
 	'''
@@ -302,7 +305,7 @@ def remove_overlap(df):
 				# an overlap happens when the event of 3 notes are 1,1,0
 				if df.iloc[i+1]['note'] == note and df.iloc[i+2]['note'] == note and \
 				   df.iloc[i+1]['event'] == 1 and df.iloc[i+2]['event'] == 0:
-					df.iloc[i+2]['timestamp'] = cur_note_on['timestamp'] + 1
+					df.iloc[i+2]['timestamp'] = '{}'.format(int(cur_note_on['timestamp']) + 1)
 					assert df.iloc[i+2]['timestamp'] < df.iloc[i+1]['timestamp'],\
 						   'Overlap still exists at index {} with timestamp {}'.format(i+2,df.iloc[i+2]['timestamp'])   
 
@@ -316,6 +319,7 @@ def ensure_min_gap(df):
 	n_rows = df.shape[0]
 
 	# iterates through df and finds note off --- note on pair to check gap
+	# TODO: debug dataframe changing all numbers into doubles
 	for i in range(n_rows):
 		if 0 < i < n_rows-1:
 			cur_row = df.iloc[i]
@@ -328,19 +332,19 @@ def ensure_min_gap(df):
 
 				if cur_note_on['note'] == note and next_note_on['note'] == note and \
 				   cur_note_on['event'] == 1 and next_note_on['event'] == 1:
-					gap = next_note_on['timestamp'] - cur_note_off['timestamp']
-					dur = cur_note_off['timestamp'] - cur_note_on['timestamp']
+					gap = int(next_note_on['timestamp']) - int(cur_note_off['timestamp']) # this returns a double
+					dur = int(cur_note_off['timestamp']) - int(cur_note_on['timestamp']) # this returns a double
 
-					print ('Gap: {}, timestamp: {}, note: {}'.format(gap,cur_note_off['timestamp'],cur_note_off['note']))
 					if gap < const.MIN_GAP:
+						print ('Gap: {}, timestamp: {}, note: {}'.format(gap,cur_note_off['timestamp'],cur_note_off['note']))
 						print ('Gap ({}) < MIN_GAP({}) with note dur ({})'.format(gap,const.MIN_GAP,dur))
 						print ('cur_note_on:\n{}'.format(cur_note_on.to_frame().T))
 						print ('cur_note_off:\n{}'.format(cur_note_off.to_frame().T))
 						print ('next_note_on:\n{}'.format(next_note_on.to_frame().T))
 						print ()
 
-						if (next_note_on['timestamp'] - const.MIN_GAP) > cur_note_on['timestamp']:
-							df.loc[i+1,'timestamp'] = next_note_on['timestamp'] - const.MIN_GAP
+						if (int(next_note_on['timestamp']) - const.MIN_GAP) > int(cur_note_on['timestamp']):
+							df.loc[df.index[i+1],'timestamp'] = '{}'.format(int(next_note_on['timestamp']) - int(const.MIN_GAP))
 							print ('cur_note_off changed to:\n{}'.format(df.iloc[i+1].to_frame().T))
 							print ()
 
@@ -351,18 +355,55 @@ def ensure_min_gap(df):
 			cur_row = df.iloc[i]
 			if cur_row['event'] == 0:
 				cur_note_off = cur_row
-				note = cur_note_off['note']
+				note = int(cur_note_off['note'])
 
 				next_note_on = df.iloc[i+1]
 
-				if next_note_on['note'] == note and next_note_on['event'] == 1:
-					gap = next_note_on['timestamp'] - cur_note_off['timestamp']
+				if int(next_note_on['note']) == note and next_note_on['event'] == 1:
+					gap = int(next_note_on['timestamp']) - int(cur_note_off['timestamp']) # this returns a double
 					if gap < const.MIN_GAP:
 						print ('Warning: Gap is still less than const.MIN_GAP at note:\n{}'.format(df.iloc[i].to_frame().T))
-					assert gap < const.MIN_GAP, 'Gap is still greater than const.MIN_GAP at note:\n{}'.format(df.iloc[i].to_frame().T)
+					# assert gap < const.MIN_GAP, 'Gap is still less than const.MIN_GAP at note:\n{}'.format(df.iloc[i].to_frame().T)
 
 	return df
 
 
+def suggested_note_dur(df):
+	# find note dur and gap for each note
+	# increase note dur to be const.SUGGESTED_NOTE_DUR
+	# set gap dur to 1ms if note dur will be less than 1ms
 
+	n_rows = df.shape[0]
+
+	for i in range(n_rows):
+		if 0 < i < n_rows-1:
+			cur_row = df.iloc[i]
+			if cur_row['event']==0:
+				cur_note_off = cur_row
+				note = cur_note_off['note']
+
+				cur_note_on = df.iloc[i-1]
+				next_note_on = df.iloc[i+1]
+
+				if cur_note_on['note'] == note and next_note_on['note'] == note and \
+				   cur_note_on['event'] == 1 and next_note_on['event'] == 1:
+					gap = int(next_note_on['timestamp']) - int(cur_note_off['timestamp']) #this returns a double
+					dur = int(cur_note_off['timestamp']) - int(cur_note_on['timestamp']) #this returns a double
+
+					if dur < const.SUGGESTED_NOTE_DUR:
+
+						if const.SUGGESTED_NOTE_DUR - dur < gap: #if there's enough gap dur to extend to
+							df.loc[df.index[i],'timestamp'] = '{}'.format(int(cur_note_on['timestamp']) + const.SUGGESTED_NOTE_DUR)
+						else:
+							print ('Dur ({}) < SUGGESTED_NOTE_DUR({}) with gap dur ({})'.format(dur,const.SUGGESTED_NOTE_DUR,gap))
+							print ('cur_note_on:\n{}'.format(cur_note_on.to_frame().T))
+							print ('cur_note_off:\n{}'.format(cur_note_off.to_frame().T))
+							print ('next_note_on:\n{}'.format(next_note_on.to_frame().T))
+							
+							df.loc[df.index[i],'timestamp'] = '{}'.format(int(next_note_on['timestamp']) - 1)
+							
+							print ('cur_note_off changed to:\n{}'.format(df.iloc[i].to_frame().T))
+							print ()
+
+	return df
 

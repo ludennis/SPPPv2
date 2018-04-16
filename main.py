@@ -48,9 +48,13 @@ if __name__ == '__main__':
 		with open('./tables/8_removed_overlap.txt','w') as file:
 			file.write(removed_overlap.__repr__())
 
-		optimize_ensure_min_gap = utils.ensure_min_gap(note_on_spacing)
+		optimize_ensure_min_gap = utils.ensure_min_gap(removed_overlap)
 		with open('./tables/9_optimize_ensure_min_gap.txt','w') as file:
 			file.write(optimize_ensure_min_gap.__repr__())
+
+		optimize_suggested_note_dur = utils.suggested_note_dur(optimize_ensure_min_gap)
+		with open('./tables/10_optimize_suggested_note_dur.txt','w') as file:
+			file.write(optimize_suggested_note_dur.__repr__())
 
 	print ('args.midi_input: {}'.format('./'+args.midi_input))
 	print ('args.p: {}'.format('./'+args.profile))
