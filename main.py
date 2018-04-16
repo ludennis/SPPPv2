@@ -56,5 +56,9 @@ if __name__ == '__main__':
 		with open('./tables/10_optimize_suggested_note_dur.txt','w') as file:
 			file.write(optimize_suggested_note_dur.__repr__())
 
+		optimize_suggested_gap_dur = utils.suggested_gap_dur(optimize_suggested_note_dur)
+		with open('./tables/11_optimize_suggested_gap_dur.txt','w') as file:
+			file.write(optimize_suggested_gap_dur.__repr__())
+
 	print ('args.midi_input: {}'.format('./'+args.midi_input))
 	print ('args.p: {}'.format('./'+args.profile))
