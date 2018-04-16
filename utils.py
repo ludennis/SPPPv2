@@ -61,6 +61,7 @@ def add_sustain_column(df):
 
 	return df
 
+# TODO: fix translate_into_percentage
 def translate_into_percentage(value,old_min,old_max,song_range=(0,100)):
 	'''
 	Auxiliary function used by 'map_midi_to_percentage()'.
@@ -78,6 +79,7 @@ def translate_into_percentage(value,old_min,old_max,song_range=(0,100)):
 
 	return percentage
 
+# TODO: to fix midi percentage
 def map_midi_to_percentage(df):
 	'''
 	Maps the midi_value to a rnage of [1,100]
@@ -216,6 +218,12 @@ def note_on_spacing_threshold(df):
 	Later this will include a threshold instead of finding the same timestamp
 	Later this will scan a number of notes in a threshold and deal with multiple note on's.
 	'''
+	n_note_on = sum([1 for index,row in df.iterrows() if row['event']==1])
+	n_note_off = sum([1 for index,row in df.iterrows() if row['event']==0])
+	print ('Before deletion: number of note on\'s ({}), number of note off\'s ({})'.format(n_note_on,n_note_off))
+
+	assert n_note_on == n_note_off, \
+		'number of note on({}) != number of note off ({})'.format(n_note_on,n_note_off)
 
 	# creates a list of id's that will be dropped using flag `del_next_note_off`
 	n_rows = df.shape[0]
@@ -270,9 +278,6 @@ def note_on_spacing_threshold(df):
 	for drop_id in drop_ids:
 		df = df.drop(df[df.id == drop_id].index)
 
-	# TODO: check for songs to see if the whole song have the same number of note on and note off
-	n_note_on = sum([1 for index,row in df.iterrows() if row['event']==1])
-	n_note_off = sum([1 for index,row in df.iterrows() if row['event']==0])
 
 	n_note_on = sum([1 for index,row in df.iterrows() if row['event']==1])
 	n_note_off = sum([1 for index,row in df.iterrows() if row['event']==0])
@@ -308,24 +313,25 @@ def ensure_min_gap(df):
 	'''
 	Checks each gap between two notes and ensure the gap is at least const.MIN_GAP
 	'''
-
 	n_rows = df.shape[0]
 
 	# iterates through df and finds note off --- note on pair to check gap
 	for i in range(n_rows):
-		if i+2 < n_rows:
+		if 0 < i < n_rows-1:
 			cur_row = df.iloc[i]
-			if cur_row['event']==1:
-				cur_note_on = cur_row
-				note = cur_note_on['note']
+			if cur_row['event'] == 0:
+				cur_note_off = cur_row
+				note = cur_note_off['note']
 
-				cur_note_off = df.iloc[i+1]
-				next_note_on = df.iloc[i+2]
+				cur_note_on = df.iloc[i-1]
+				next_note_on = df.iloc[i+1]
 
-				if cur_note_off['note'] == note and next_note_on['note'] == note and \
-				   cur_note_off['event'] == 0 and next_note_on['event'] == 1:
+				if cur_note_on['note'] == note and next_note_on['note'] == note and \
+				   cur_note_on['event'] == 1 and next_note_on['event'] == 1:
 					gap = next_note_on['timestamp'] - cur_note_off['timestamp']
 					dur = cur_note_off['timestamp'] - cur_note_on['timestamp']
+
+					print ('Gap: {}, timestamp: {}, note: {}'.format(gap,cur_note_off['timestamp'],cur_note_off['note']))
 					if gap < const.MIN_GAP:
 						print ('Gap ({}) < MIN_GAP({}) with note dur ({})'.format(gap,const.MIN_GAP,dur))
 						print ('cur_note_on:\n{}'.format(cur_note_on.to_frame().T))
@@ -333,11 +339,29 @@ def ensure_min_gap(df):
 						print ('next_note_on:\n{}'.format(next_note_on.to_frame().T))
 						print ()
 
-						if next_note_on['timestamp'] - gap > cur_note_on['timestamp']:
-							df.iloc[cur_note_off['id']]['timestamp'] = next_note_on['timestamp'] - gap
-						cur_note_off = df.iloc[cur_note_off['id']]
-						print ('cur_note_off changed to:\n{}'.format(cur_note_off.to_frame().T))
+						if (next_note_on['timestamp'] - const.MIN_GAP) > cur_note_on['timestamp']:
+							df.loc[i+1,'timestamp'] = next_note_on['timestamp'] - const.MIN_GAP
+							print ('cur_note_off changed to:\n{}'.format(df.iloc[i+1].to_frame().T))
+							print ()
 
+	# iterates over all again to ensure const.MIN_GAP
+	df = sort_by_note(df)
+	for i in range(n_rows):
+		if i+1 < n_rows:
+			cur_row = df.iloc[i]
+			if cur_row['event'] == 0:
+				cur_note_off = cur_row
+				note = cur_note_off['note']
+
+				next_note_on = df.iloc[i+1]
+
+				if next_note_on['note'] == note and next_note_on['event'] == 1:
+					gap = next_note_on['timestamp'] - cur_note_off['timestamp']
+					if gap < const.MIN_GAP:
+						print ('Warning: Gap is still less than const.MIN_GAP at note:\n{}'.format(df.iloc[i].to_frame().T))
+					assert gap < const.MIN_GAP, 'Gap is still greater than const.MIN_GAP at note:\n{}'.format(df.iloc[i].to_frame().T)
+
+	return df
 
 
 
