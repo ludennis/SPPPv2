@@ -60,5 +60,8 @@ if __name__ == '__main__':
 		with open('./tables/11_optimize_suggested_gap_dur.txt','w') as file:
 			file.write(optimize_suggested_gap_dur.__repr__())
 
+		utils.generate_high_power(df=optimize_suggested_gap_dur,pns_df=profile['no_sustain'],\
+								  ps_df=profile['sustain'],mp_df=midi_percentage)
+
 	print ('args.midi_input: {}'.format('./'+args.midi_input))
 	print ('args.p: {}'.format('./'+args.profile))

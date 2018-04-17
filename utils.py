@@ -336,17 +336,17 @@ def ensure_min_gap(df):
 					dur = int(cur_note_off['timestamp']) - int(cur_note_on['timestamp']) # this returns a double
 
 					if gap < const.MIN_GAP:
-						print ('Gap: {}, timestamp: {}, note: {}'.format(gap,cur_note_off['timestamp'],cur_note_off['note']))
-						print ('Gap ({}) < MIN_GAP({}) with note dur ({})'.format(gap,const.MIN_GAP,dur))
-						print ('cur_note_on:\n{}'.format(cur_note_on.to_frame().T))
-						print ('cur_note_off:\n{}'.format(cur_note_off.to_frame().T))
-						print ('next_note_on:\n{}'.format(next_note_on.to_frame().T))
-						print ()
+						# print ('Gap: {}, timestamp: {}, note: {}'.format(gap,cur_note_off['timestamp'],cur_note_off['note']))
+						# print ('Gap ({}) < MIN_GAP({}) with note dur ({})'.format(gap,const.MIN_GAP,dur))
+						# print ('cur_note_on:\n{}'.format(cur_note_on.to_frame().T))
+						# print ('cur_note_off:\n{}'.format(cur_note_off.to_frame().T))
+						# print ('next_note_on:\n{}'.format(next_note_on.to_frame().T))
+						# print ()
 
 						if (int(next_note_on['timestamp']) - const.MIN_GAP) > int(cur_note_on['timestamp']):
 							df.loc[df.index[i+1],'timestamp'] = int(next_note_on['timestamp']) - int(const.MIN_GAP)
-							print ('cur_note_off changed to:\n{}'.format(df.iloc[i+1].to_frame().T))
-							print ()
+							# print ('cur_note_off changed to:\n{}'.format(df.iloc[i+1].to_frame().T))
+							# print ()
 
 	
 	df = sort_by_note(df)
@@ -397,15 +397,15 @@ def suggested_note_dur(df):
 						if const.SUGGESTED_NOTE_DUR - dur < gap: #if there's enough gap dur to extend to
 							df.loc[df.index[i],'timestamp'] = int(cur_note_on['timestamp']) + const.SUGGESTED_NOTE_DUR
 						else:
-							print ('Dur ({}) < SUGGESTED_NOTE_DUR({}) with gap dur ({})'.format(dur,const.SUGGESTED_NOTE_DUR,gap))
-							print ('cur_note_on:\n{}'.format(cur_note_on.to_frame().T))
-							print ('cur_note_off:\n{}'.format(cur_note_off.to_frame().T))
-							print ('next_note_on:\n{}'.format(next_note_on.to_frame().T))
+							# print ('Dur ({}) < SUGGESTED_NOTE_DUR({}) with gap dur ({})'.format(dur,const.SUGGESTED_NOTE_DUR,gap))
+							# print ('cur_note_on:\n{}'.format(cur_note_on.to_frame().T))
+							# print ('cur_note_off:\n{}'.format(cur_note_off.to_frame().T))
+							# print ('next_note_on:\n{}'.format(next_note_on.to_frame().T))
 							
 							df.loc[df.index[i],'timestamp'] = int(next_note_on['timestamp']) - 1
 							
-							print ('cur_note_off changed to:\n{}'.format(df.iloc[i].to_frame().T))
-							print ()
+							# print ('cur_note_off changed to:\n{}'.format(df.iloc[i].to_frame().T))
+							# print ()
 
 	return df
 
@@ -430,16 +430,16 @@ def suggested_gap_dur(df):
 					# if next_note_off - DESIRED_GAP_DUR < cur_note_on
 					if gap < const.DESIRED_GAP_DUR:
 						if int(cur_note_on['timestamp']) < int(cur_note_off['timestamp']) - const.DESIRED_GAP_DUR:
-							print ('Gap ({}) < DESIRED_GAP_DUR({}) with note dur ({})'.format(gap,const.DESIRED_GAP_DUR,dur))
-							print ('cur_note_on:\n{}'.format(cur_note_on.to_frame().T))
-							print ('cur_note_off:\n{}'.format(cur_note_off.to_frame().T))
-							print ('next_note_on:\n{}'.format(next_note_on.to_frame().T))
+							# print ('Gap ({}) < DESIRED_GAP_DUR({}) with note dur ({})'.format(gap,const.DESIRED_GAP_DUR,dur))
+							# print ('cur_note_on:\n{}'.format(cur_note_on.to_frame().T))
+							# print ('cur_note_off:\n{}'.format(cur_note_off.to_frame().T))
+							# print ('next_note_on:\n{}'.format(next_note_on.to_frame().T))
 
 
 							df.loc[df.index[i],'timestamp'] = int(next_note_on['timestamp']) - const.DESIRED_GAP_DUR
 	
-							print ('cur_note_off changed to:\n{}'.format(df.iloc[i].to_frame().T))
-							print ()
+							# print ('cur_note_off changed to:\n{}'.format(df.iloc[i].to_frame().T))
+							# print ()
 						else: df.loc[df.index[i],'timestamp'] = int(cur_note_on['timestamp']) + 1
 	
 	df = sort_by_note(df)
@@ -464,4 +464,42 @@ def suggested_gap_dur(df):
 						print ('next_note_on:\n{}'.format(next_note_on.to_frame().T))
 						print ()
 	return df
+
+
+def generate_high_power(df,pns_df,ps_df,mp_df):
+	'''
+	df = dataframe containing all the notes
+	pns_df = profile_no_sustain
+	ps_df = profile_sustain
+	mp_df = midi_percentage 
+	for each note:
+		high power = high_power_min + (high_power_max - high_power_min) * midi_percentage
+		dur = high_dur_min + (high_dur_max - high_dur_min) * midi_percentage
+
+	where high_power_min & high_power_max are from 0_profile.txt and midi_percentage is from 4_midi_percentage.txt
+	'''
+	pns_df = pns_df[['note','high_power_max','high_power_min','high_dur_max','high_dur_min']]
+	ps_df = ps_df[['note','high_power_max','high_power_min','high_dur_max','high_dur_min']]
+	mp_df = mp_df[['id','timestamp','midi_percentage']]
+
+	# apply midi_percentage to both pns_df and ps_df
+
+
+
+	# create a new high power dataframe
+	# id_note_on is the id of the note on each high sequence is derived from
+	high_df = pd.DataFrame(columns=['id_note_on','power','dur'])
+
+	# iterate through dataframe and get high power and dur
+	n_rows = df.shape[0]
+	for i in range(n_rows):
+		cur_row = df.iloc[i]
+		# if cur_row['event']==1 and cur_row['profile_power'] > 0:
+			# check sustain to use either pns_df or ps_df
+
+			# calculate 
+			
+			# df.loc[df['column_name'] == some_value]
+
+	# return a dataframe with [id_note_on,power,dur]
 
