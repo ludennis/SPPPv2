@@ -211,13 +211,28 @@ def sort_by_note(df):
 	df = df.sort_values(by=['note','timestamp'])
 	return df
 
+def sort_by_timestamp(df):
+	df = df.sort_values(by=['timestamp'])
+	return df
+
+
+def check_consecutive_note_on(df):
+	df = sort_by_note(df)
+
+	s = df[['id','event','note']]
+
+	for i in range(s.shape[0]-1):
+		if s.loc[s.index[i],'note'] == s.loc[s.index[i+1],'note'] and \
+		   s.loc[s.index[i],'event'] == 1 and s.loc[s.index[i+1],'event'] == 1:
+			assert s.loc[s.index[i],'event'] != s.loc[s.index[i+1],'event'],\
+				'check_consecutive_note_on: note id {} and note id {}'.format(s.loc[s.index[i],'id'],s.loc[s.index[i+1],'id'] )
+
 
 def note_on_spacing_threshold(df):
 	'''
 	finds notes that have the same note on and deletes the one that has
 	a lower profile_power
 	also deletes the note off
-	TODO: to find multiple note on's 
 	Later this will include a threshold instead of finding the same timestamp
 	Later this will scan a number of notes in a threshold and deal with multiple note on's.
 	'''
@@ -289,6 +304,8 @@ def note_on_spacing_threshold(df):
 	assert n_note_on == n_note_off, \
 		'number of note on({}) != number of note off ({})'.format(n_note_on,n_note_off)
 
+	df = sort_by_timestamp(df)
+
 	return df
 
 
@@ -308,6 +325,8 @@ def remove_overlap(df):
 					df.loc[df.index[i+2],'timestamp'] = int(cur_note_on['timestamp']) + 1
 					assert df.iloc[i+2]['timestamp'] < df.iloc[i+1]['timestamp'],\
 						   'Overlap still exists at index {} with timestamp {}'.format(i+2,df.iloc[i+2]['timestamp'])   
+
+
 
 	return sort_by_note(df)
 
@@ -463,43 +482,50 @@ def suggested_gap_dur(df):
 						print ('cur_note_off:\n{}'.format(cur_note_off.to_frame().T))
 						print ('next_note_on:\n{}'.format(next_note_on.to_frame().T))
 						print ()
-	return df
 
 
-def generate_high_power(df,pns_df,ps_df,mp_df):
+def generate_high_power(df,ps_df,pns_df,mp_df):
 	'''
-	df = dataframe containing all the notes
-	pns_df = profile_no_sustain
-	ps_df = profile_sustain
-	mp_df = midi_percentage 
-	for each note:
-		high power = high_power_min + (high_power_max - high_power_min) * midi_percentage
-		dur = high_dur_min + (high_dur_max - high_dur_min) * midi_percentage
-
-	where high_power_min & high_power_max are from 0_profile.txt and midi_percentage is from 4_midi_percentage.txt
+	calls the current dataframe (df), profile dataframes (ps_df & pns_df), and midi_percentage dataframe (mp_df)
+	to generate high power solenoid sequences. In order to generate the sequences, we need 'high_power_max', 'high_power_min',
+	'high_dur_max', 'high_dur_min' from ps_df and pns_df, and we need 'id', and 'midi_percentage' from mp_df
+	The formula are:
+		high_power = high_power_min + abs(high_power_max - high_power_min) * midi_percentage
+		high_dur = high_dur_min + abs(high_dur_max - high_power_min) * midi_percentage
 	'''
-	pns_df = pns_df[['note','high_power_max','high_power_min','high_dur_max','high_dur_min']]
-	ps_df = ps_df[['note','high_power_max','high_power_min','high_dur_max','high_dur_min']]
-	mp_df = mp_df[['id','timestamp','midi_percentage']]
 
-	# apply midi_percentage to both pns_df and ps_df
+	# initialize dataframe to store high power sequences
+	# [id_note_on,power,dur]
+	hp_df = pd.DataFrame(columns=['id_note_on','power','dur'])
 
+	# make sure that the dataframe is sorted by timestamp
+	df = sort_by_timestamp(df)
 
+	# check to see if df and mp_df has the same length
+	# assert df.shape[0] == mp_df.shape[0], 'generate_high_power(): df and mp_df have different length'
 
-	# create a new high power dataframe
-	# id_note_on is the id of the note on each high sequence is derived from
-	high_df = pd.DataFrame(columns=['id_note_on','power','dur'])
+	# use this call values from other dataframes 'df.loc[df['column_name'] == some_value]'
+	# iterate through df
+	for index, row in df.iterrows():
+		if row['event'] == 1:
+			pct = mp_df.loc[mp_df['id'] == row['id']]['midi_percentage'].item()
+			if row['sustain'] == 1:
+				# with sustain
+				high_power_max = ps_df.loc[ps_df['note'] == row['note']]['high_power_max'].item()
+				high_power_min = ps_df.loc[ps_df['note'] == row['note']]['high_power_min'].item()
+				high_dur_max = ps_df.loc[ps_df['note'] == row['note']]['high_dur_max'].item()
+				high_dur_min = ps_df.loc[ps_df['note'] == row['note']]['high_dur_min'].item()
+			else:
+				# no sustain
+				high_power_max = pns_df.loc[pns_df['note'] == row['note']]['high_power_max'].item()
+				high_power_min = pns_df.loc[pns_df['note'] == row['note']]['high_power_min'].item()
+				high_dur_max = pns_df.loc[pns_df['note'] == row['note']]['high_dur_max'].item()
+				high_dur_min = pns_df.loc[pns_df['note'] == row['note']]['high_dur_min'].item()
+				
+			power = int(high_power_min + abs(high_power_min - high_power_max) * pct / 100.0)
+			dur = int(high_dur_min + abs(high_dur_min - high_dur_max) * pct / 100.0)
 
-	# iterate through dataframe and get high power and dur
-	n_rows = df.shape[0]
-	for i in range(n_rows):
-		cur_row = df.iloc[i]
-		# if cur_row['event']==1 and cur_row['profile_power'] > 0:
-			# check sustain to use either pns_df or ps_df
-
-			# calculate 
+			# add that to hp_df
+			hp_df.loc[hp_df.shape[0]] = [int(row['id']),int(power),int(dur)]
 			
-			# df.loc[df['column_name'] == some_value]
-
-	# return a dataframe with [id_note_on,power,dur]
-
+	return hp_df

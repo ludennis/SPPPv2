@@ -60,8 +60,12 @@ if __name__ == '__main__':
 		with open('./tables/11_optimize_suggested_gap_dur.txt','w') as file:
 			file.write(optimize_suggested_gap_dur.__repr__())
 
-		utils.generate_high_power(df=optimize_suggested_gap_dur,pns_df=profile['no_sustain'],\
-								  ps_df=profile['sustain'],mp_df=midi_percentage)
-
+		high_power = utils.generate_high_power(df=optimize_suggested_gap_dur,\
+											   ps_df=profile['sustain'],\
+											   pns_df=profile['no_sustain'],\
+											   mp_df=midi_percentage)
+		with open('./tables/12_high_power.txt','w') as file:
+			file.write(high_power.__repr__())
+			
 	print ('args.midi_input: {}'.format('./'+args.midi_input))
 	print ('args.p: {}'.format('./'+args.profile))
