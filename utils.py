@@ -211,13 +211,28 @@ def sort_by_note(df):
 	df = df.sort_values(by=['note','timestamp'])
 	return df
 
+def sort_by_timestamp(df):
+	df = df.sort_values(by=['timestamp'])
+	return df
+
+
+def check_consecutive_note_on(df):
+	df = sort_by_note(df)
+
+	s = df[['id','event','note']]
+
+	for i in range(s.shape[0]-1):
+		if s.loc[s.index[i],'note'] == s.loc[s.index[i+1],'note'] and \
+		   s.loc[s.index[i],'event'] == 1 and s.loc[s.index[i+1],'event'] == 1:
+			assert s.loc[s.index[i],'event'] != s.loc[s.index[i+1],'event'],\
+				'check_consecutive_note_on: note id {} and note id {}'.format(s.loc[s.index[i],'id'],s.loc[s.index[i+1],'id'] )
+
 
 def note_on_spacing_threshold(df):
 	'''
 	finds notes that have the same note on and deletes the one that has
 	a lower profile_power
 	also deletes the note off
-	TODO: to find multiple note on's 
 	Later this will include a threshold instead of finding the same timestamp
 	Later this will scan a number of notes in a threshold and deal with multiple note on's.
 	'''
@@ -289,6 +304,8 @@ def note_on_spacing_threshold(df):
 	assert n_note_on == n_note_off, \
 		'number of note on({}) != number of note off ({})'.format(n_note_on,n_note_off)
 
+	df = sort_by_
+
 	return df
 
 
@@ -308,6 +325,8 @@ def remove_overlap(df):
 					df.loc[df.index[i+2],'timestamp'] = int(cur_note_on['timestamp']) + 1
 					assert df.iloc[i+2]['timestamp'] < df.iloc[i+1]['timestamp'],\
 						   'Overlap still exists at index {} with timestamp {}'.format(i+2,df.iloc[i+2]['timestamp'])   
+
+
 
 	return sort_by_note(df)
 
@@ -336,12 +355,12 @@ def ensure_min_gap(df):
 					dur = int(cur_note_off['timestamp']) - int(cur_note_on['timestamp']) # this returns a double
 
 					if gap < const.MIN_GAP:
-						print ('Gap: {}, timestamp: {}, note: {}'.format(gap,cur_note_off['timestamp'],cur_note_off['note']))
-						print ('Gap ({}) < MIN_GAP({}) with note dur ({})'.format(gap,const.MIN_GAP,dur))
-						print ('cur_note_on:\n{}'.format(cur_note_on.to_frame().T))
-						print ('cur_note_off:\n{}'.format(cur_note_off.to_frame().T))
-						print ('next_note_on:\n{}'.format(next_note_on.to_frame().T))
-						print ()
+						# print ('Gap: {}, timestamp: {}, note: {}'.format(gap,cur_note_off['timestamp'],cur_note_off['note']))
+						# print ('Gap ({}) < MIN_GAP({}) with note dur ({})'.format(gap,const.MIN_GAP,dur))
+						# print ('cur_note_on:\n{}'.format(cur_note_on.to_frame().T))
+						# print ('cur_note_off:\n{}'.format(cur_note_off.to_frame().T))
+						# print ('next_note_on:\n{}'.format(next_note_on.to_frame().T))
+						# print ()
 
 						if (int(next_note_on['timestamp']) - const.MIN_GAP) > int(cur_note_on['timestamp']):
 							df.loc[df.index[i+1],'timestamp'] = int(next_note_on['timestamp']) - int(const.MIN_GAP)
@@ -397,10 +416,10 @@ def suggested_note_dur(df):
 						if const.SUGGESTED_NOTE_DUR - dur < gap: #if there's enough gap dur to extend to
 							df.loc[df.index[i],'timestamp'] = int(cur_note_on['timestamp']) + const.SUGGESTED_NOTE_DUR
 						else:
-							print ('Dur ({}) < SUGGESTED_NOTE_DUR({}) with gap dur ({})'.format(dur,const.SUGGESTED_NOTE_DUR,gap))
-							print ('cur_note_on:\n{}'.format(cur_note_on.to_frame().T))
-							print ('cur_note_off:\n{}'.format(cur_note_off.to_frame().T))
-							print ('next_note_on:\n{}'.format(next_note_on.to_frame().T))
+							# print ('Dur ({}) < SUGGESTED_NOTE_DUR({}) with gap dur ({})'.format(dur,const.SUGGESTED_NOTE_DUR,gap))
+							# print ('cur_note_on:\n{}'.format(cur_note_on.to_frame().T))
+							# print ('cur_note_off:\n{}'.format(cur_note_off.to_frame().T))
+							# print ('next_note_on:\n{}'.format(next_note_on.to_frame().T))
 							
 							df.loc[df.index[i],'timestamp'] = int(next_note_on['timestamp']) - 1
 							
@@ -430,10 +449,10 @@ def suggested_gap_dur(df):
 					# if next_note_off - DESIRED_GAP_DUR < cur_note_on
 					if gap < const.DESIRED_GAP_DUR:
 						if int(cur_note_on['timestamp']) < int(cur_note_off['timestamp']) - const.DESIRED_GAP_DUR:
-							print ('Gap ({}) < DESIRED_GAP_DUR({}) with note dur ({})'.format(gap,const.DESIRED_GAP_DUR,dur))
-							print ('cur_note_on:\n{}'.format(cur_note_on.to_frame().T))
-							print ('cur_note_off:\n{}'.format(cur_note_off.to_frame().T))
-							print ('next_note_on:\n{}'.format(next_note_on.to_frame().T))
+							# print ('Gap ({}) < DESIRED_GAP_DUR({}) with note dur ({})'.format(gap,const.DESIRED_GAP_DUR,dur))
+							# print ('cur_note_on:\n{}'.format(cur_note_on.to_frame().T))
+							# print ('cur_note_off:\n{}'.format(cur_note_off.to_frame().T))
+							# print ('next_note_on:\n{}'.format(next_note_on.to_frame().T))
 
 
 							df.loc[df.index[i],'timestamp'] = int(next_note_on['timestamp']) - const.DESIRED_GAP_DUR
@@ -463,5 +482,27 @@ def suggested_gap_dur(df):
 						print ('cur_note_off:\n{}'.format(cur_note_off.to_frame().T))
 						print ('next_note_on:\n{}'.format(next_note_on.to_frame().T))
 						print ()
-	return df
 
+	return sort_by_timestamp(df)
+
+def generate_high_power(df,ps_df,pns_df,mp_df):
+	'''
+	calls the current dataframe (df), profile dataframes (ps_df & pns_df), and midi_percentage dataframe (mp_df)
+	to generate high power solenoid sequences. In order to generate the sequences, we need 'high_power_max', 'high_power_min',
+	'high_dur_max', 'high_dur_min' from ps_df and pns_df, and we need 'id', and 'midi_percentage' from mp_df
+	The formula are:
+		high_power = high_power_min + abs(high_power_max - high_power_min) * midi_percentage
+		high_dur = high_dur_min + abs(high_dur_max - high_power_min) * midi_percentage
+	'''
+
+	# make sure that the dataframe is sorted by timestamp
+	df = sort_by_timestamp(df)
+
+	# check to see if df and mp_df has the same length
+	assert df.shape[0] == mp_df.shape[0], 'generate_high_power(): df and mp_df have different length'
+
+	# iterate through df
+
+	# combine ps_df, pns_df, and mp_df to have one table with the format
+	# 
+	pass
