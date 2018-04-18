@@ -304,7 +304,7 @@ def note_on_spacing_threshold(df):
 	assert n_note_on == n_note_off, \
 		'number of note on({}) != number of note off ({})'.format(n_note_on,n_note_off)
 
-	df = sort_by_
+	df = sort_by_timestamp(df)
 
 	return df
 
@@ -495,14 +495,38 @@ def generate_high_power(df,ps_df,pns_df,mp_df):
 		high_dur = high_dur_min + abs(high_dur_max - high_power_min) * midi_percentage
 	'''
 
+	# initialize dataframe to store high power sequences
+	# [id_note_on,power,dur]
+	hp_df = pd.DataFrame(columns=['id_note_on','power','dur'])
+
 	# make sure that the dataframe is sorted by timestamp
 	df = sort_by_timestamp(df)
 
 	# check to see if df and mp_df has the same length
-	assert df.shape[0] == mp_df.shape[0], 'generate_high_power(): df and mp_df have different length'
+	# assert df.shape[0] == mp_df.shape[0], 'generate_high_power(): df and mp_df have different length'
 
+	# use this call values from other dataframes 'df.loc[df['column_name'] == some_value]'
 	# iterate through df
+	for index, row in df.iterrows():
+		if row['event'] == 1:
+			pct = mp_df.loc[mp_df['id'] == row['id']]['midi_percentage'].item()
+			if row['sustain'] == 1:
+				# with sustain
+				high_power_max = ps_df.loc[ps_df['note'] == row['note']]['high_power_max'].item()
+				high_power_min = ps_df.loc[ps_df['note'] == row['note']]['high_power_min'].item()
+				high_dur_max = ps_df.loc[ps_df['note'] == row['note']]['high_dur_max'].item()
+				high_dur_min = ps_df.loc[ps_df['note'] == row['note']]['high_dur_min'].item()
+			else:
+				# no sustain
+				high_power_max = pns_df.loc[pns_df['note'] == row['note']]['high_power_max'].item()
+				high_power_min = pns_df.loc[pns_df['note'] == row['note']]['high_power_min'].item()
+				high_dur_max = pns_df.loc[pns_df['note'] == row['note']]['high_dur_max'].item()
+				high_dur_min = pns_df.loc[pns_df['note'] == row['note']]['high_dur_min'].item()
+				
+			power = int(high_power_min + abs(high_power_min - high_power_max) * pct / 100.0)
+			dur = int(high_dur_min + abs(high_dur_min - high_dur_max) * pct / 100.0)
 
-	# combine ps_df, pns_df, and mp_df to have one table with the format
-	# 
-	pass
+			# add that to hp_df
+			hp_df.loc[hp_df.shape[0]] = [int(row['id']),int(power),int(dur)]
+			
+	return hp_df

@@ -64,6 +64,8 @@ if __name__ == '__main__':
 											   ps_df=profile['sustain'],\
 											   pns_df=profile['no_sustain'],\
 											   mp_df=midi_percentage)
-
+		with open('./tables/12_high_power.txt','w') as file:
+			file.write(high_power.__repr__())
+			
 	print ('args.midi_input: {}'.format('./'+args.midi_input))
 	print ('args.p: {}'.format('./'+args.profile))
