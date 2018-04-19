@@ -588,11 +588,20 @@ def generate_normal_power(df,ps_df,pns_df,psbn_df):
 
 	return np_df
 
+def write_header(write_file):
+	write_file.write('import serial\n')
+	write_file.write('import time\n')
+	write_file.write('ser = serial.Serial(\'{}\', 115200, timeout=5)\n'.format(const.COM_SERIAL))
+	write_file.write('time.sleep(5)\n\n')
+	write_file.write('#<Timestamp, track number, MIDI channel, type, key, value>\n')
+	write_file.write('ser.write(\'<0,0,0,8,0,0>\')\n')
+
 def build_to_solenoid_staircases(df,hp_df,np_df,lp_df):
 	'''
 	build solenoid staircases ready to play on piano 
 	sequence format [timestamp,note,power]
 	'''
+	slnd_df = 
 	assert hp_df.shape[0] == np_df.shape[0] and np_df.shap[0] == lp_df.shape[0],\
 		'Error: High Power / Normal Power / Low Power does not have same length'
 
@@ -614,7 +623,11 @@ def build_to_solenoid_staircases(df,hp_df,np_df,lp_df):
 			low_power = lp_df.loc[lp_df['id']==note_on['id']]['power'].item()
 			low_dur = lp_dur.loc[lp_df['id']==note_on['id']]['dur'].item()
 
-			
+			# check to see which ones can fit into the duration of a note 
+			# high power is always guarantee to be in the solenoid staircase
+
+			# 
+			dur = dur - high_power_dur
 
 
 				
