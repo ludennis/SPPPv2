@@ -28,6 +28,7 @@ def filter_raw_data(file_path):
 
 	return df
 
+
 def add_id(df):
 	'''
 	Adds a column of id. This is the same as index, but becuase index is harder to call from,
@@ -38,9 +39,11 @@ def add_id(df):
 	df = df[cols]
 	return df
 
+
 # TODO
 def detect_sustain():
 	pass
+
 
 def add_sustain_column(df):
 	'''
@@ -82,6 +85,7 @@ def translate_into_percentage(value,old_min,old_max,song_range=(0,100)):
 
 	return percentage
 
+
 # TODO: to fix midi percentage
 def map_midi_to_percentage(df):
 	'''
@@ -109,6 +113,7 @@ def map_midi_to_percentage(df):
 			
 	df = df.rename(index=str,columns={'midi_value':'midi_percentage'})
 	return df
+
 
 def read_profile(profile_path):
 	'''
@@ -177,6 +182,7 @@ def read_profile(profile_path):
 
 	return profile
 
+
 def apply_profile(df,profile):
 	'''
 	apply the percentage with profile
@@ -204,12 +210,14 @@ def apply_profile(df,profile):
 	df = df.rename(index=str,columns={'midi_percentage':'profile_power'})
 	return df
 
+
 def sort_by_note(df):
 	'''
 	sorts the dataframe by notes and then timestamp
 	'''
 	df = df.sort_values(by=['note','timestamp'])
 	return df
+
 
 def sort_by_timestamp(df):
 	df = df.sort_values(by=['timestamp'])
@@ -428,6 +436,7 @@ def suggested_note_dur(df):
 
 	return df
 
+
 def suggested_gap_dur(df):
 	n_rows = df.shape[0]
 	for i in range(n_rows):
@@ -532,6 +541,7 @@ def generate_high_power(df,ps_df,pns_df,mp_df):
 			
 	return hp_df
 
+
 def generate_low_power(df,ps_df,pns_df,mp_df):
 	'''
 	does the same thing as compare to generate_high_power() except that it's for low_power and low_dur
@@ -565,6 +575,7 @@ def generate_low_power(df,ps_df,pns_df,mp_df):
 			
 	return lp_df
 
+
 def generate_normal_power(df,ps_df,pns_df,psbn_df):
 	'''
 	gets normal_dur_min from profiles
@@ -587,18 +598,6 @@ def generate_normal_power(df,ps_df,pns_df,psbn_df):
 			np_df.loc[np_df.shape[0]] = [int(row['id']),int(power),int(dur)]
 
 	return np_df
-
-def write_header(write_file):
-	write_file.write('import serial\n')
-	write_file.write('import time\n')
-	write_file.write('ser = serial.Serial(\'{}\', 115200, timeout=5)\n'.format(const.COM_SERIAL))
-	write_file.write('time.sleep(5)\n\n')
-	write_file.write('#<Timestamp, track number, MIDI channel, type, key, value>\n')
-	write_file.write('ser.write(\'<0,0,0,8,0,0>\')\n')
-
-
-def write_footer(write_file):
-	write_file.write('ser.write(\'<0,0,0,7,0,0>\')\n')
 
 
 def build_to_solenoid_staircases(df,hp_df,np_df,lp_df):
@@ -651,4 +650,27 @@ def build_to_solenoid_staircases(df,hp_df,np_df,lp_df):
 	slnd_df = sort_by_timestamp(slnd_df)
 
 	return slnd_df
+
 				
+def write_solenoid_to_file(slnd_df,write_file):
+	'''
+	this writes the solenoid dataframe into a python file for playing on the piano into write_file
+	'''
+
+	# write the header
+	write_file.write('import serial\n')
+	write_file.write('import time\n')
+	write_file.write('ser = serial.Serial(\'{}\', 115200, timeout=5)\n'.format(const.COM_SERIAL))
+	write_file.write('time.sleep(5)\n\n')
+	write_file.write('#<Timestamp, track number, MIDI channel, type, key, value>\n')
+	write_file.write('ser.write(\'<0,0,0,8,0,0>\')\n')
+
+	# write all the notes from slnd_df
+	for index, row in slnd_df.iterrows():
+		write_file.write('ser.write(\'<{},{},{},{},{},{}>\')\n'\
+						 .format(row['timestamp'],row['track'],row['channel'],row['event'],row['note'],row['value']))
+		write_file.write('ser.readline()\n')
+
+	# write the footer
+	write_file.write('ser.write(\'<0,0,0,7,0,0>\')\n')
+

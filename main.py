@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
 	with pd.option_context('display.max_rows',None,'expand_frame_repr',False):
 		raw_midi_table = args.midi_input
-
+		song_name = args.midi_input.split('.')[-2].split('/')[-1]
 
 		start_time = datetime.now()
 		filtered_raw_midi_data = utils.filter_raw_data(raw_midi_table)
@@ -138,6 +138,9 @@ if __name__ == '__main__':
 			file.write(solenoid_staircases.__repr__())
 		time_elapsed = datetime.now() - start_time
 		print('Time elapsed {} from build_to_solenoid_staircases()'.format(time_elapsed))
+
+		with open('./solenoids/{}.py'.format(song_name),'w') as file:
+			utils.write_solenoid_to_file(slnd_df=solenoid_staircases,write_file=file)
 
 	print ('args.midi_input: {}'.format('./'+args.midi_input))
 	print ('args.p: {}'.format('./'+args.profile))
