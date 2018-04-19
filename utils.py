@@ -596,6 +596,7 @@ def write_header(write_file):
 	write_file.write('#<Timestamp, track number, MIDI channel, type, key, value>\n')
 	write_file.write('ser.write(\'<0,0,0,8,0,0>\')\n')
 
+
 def write_footer(write_file):
 	write_file.write('ser.write(\'<0,0,0,7,0,0>\')\n')
 
@@ -605,33 +606,49 @@ def build_to_solenoid_staircases(df,hp_df,np_df,lp_df):
 	build solenoid staircases ready to play on piano 
 	sequence format [timestamp,note,power]
 	'''
-	slnd_df = 
-	assert hp_df.shape[0] == np_df.shape[0] and np_df.shap[0] == lp_df.shape[0],\
+
+	assert hp_df.shape[0] == np_df.shape[0] and np_df.shape[0] == lp_df.shape[0],\
 		'Error: High Power / Normal Power / Low Power does not have same length'
+
+	# initialize dataframe to contain solenoid
+	slnd_df = pd.DataFrame(columns=['timestamp','track','channel','event','note','value'])
 
 	for i in range(df.shape[0]-1):
 		cur_row = df.iloc[i]
 		next_row = df.iloc[i+1]
 
 		if cur_row['event'] == 1 and next_row['event'] == 0:
-			note_on = cur_row['event']
-			note_off = next_row['event']
+			# build solenoid staircase
+			note_on = cur_row
+			note_off = next_row
 			dur = note_off['timestamp'] - note_on['timestamp']
 
-			high_power = hp_df.loc[hp_df['id']==note_on['id']]['power'].item()
-			high_dur = hp_df.loc[hp_df['id']==note_on['id']]['dur'].item()
+			high_power = hp_df.loc[hp_df['id_note_on']==note_on['id']]['power'].item()
+			high_dur = hp_df.loc[hp_df['id_note_on']==note_on['id']]['dur'].item()
 
-			normal_power = np_df.loc[np_df['id']==note_on['id']]['power'].item()
-			normal_dur = np_df.loc[np_df['id']==note_on['id']]['dur'].item()
+			normal_power = np_df.loc[np_df['id_note_on']==note_on['id']]['power'].item()
+			normal_dur = np_df.loc[np_df['id_note_on']==note_on['id']]['dur'].item()
 
-			low_power = lp_df.loc[lp_df['id']==note_on['id']]['power'].item()
-			low_dur = lp_dur.loc[lp_df['id']==note_on['id']]['dur'].item()
+			low_power = lp_df.loc[lp_df['id_note_on']==note_on['id']]['power'].item()
+			low_dur = lp_df.loc[lp_df['id_note_on']==note_on['id']]['dur'].item()
 
 			# check to see which ones can fit into the duration of a note 
 			# high power is always guarantee to be in the solenoid staircase
 
-			# 
-			dur = dur - high_power_dur
+			# add high_power into solenoid dataframe
+			slnd_df.loc[slnd_df.shape[0]] = [note_on['timestamp'],note_on['track'],note_on['channel'],note_on['event'],note_on['note'],high_power]
+			dur = dur - high_dur
 
+			if dur > 0:
+				slnd_df.loc[slnd_df.shape[0]] = [note_on['timestamp'] + high_dur, note_on['track'],note_on['channel'],note_on['event'],note_on['note'],normal_power]
+				dur = dur - normal_dur
+				if dur > 0:
+					slnd_df.loc[slnd_df.shape[0]] = [note_on['timestamp'] + normal_dur, note_on['track'],note_on['channel'],note_on['event'],note_on['note'],low_power]
 
+			# add note off
+			slnd_df.loc[slnd_df.shape[0]] = [note_off['timestamp'],note_off['track'],note_off['channel'],note_off['event'],note_off['note'],note_off['profile_power']]
+
+	slnd_df = sort_by_timestamp(slnd_df)
+
+	return slnd_df
 				
