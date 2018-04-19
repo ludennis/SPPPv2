@@ -33,8 +33,8 @@ if __name__ == '__main__':
 		 	no_sus_file.write(profile['no_sustain'].__repr__())
 
 		processed_midi_data = utils.apply_profile(midi_percentage,profile)
-		# with open('./tables/5_processed_midi_data.txt','w') as file:
-		# 	file.write(processed_midi_data.__repr__())
+		with open('./tables/5_processed_midi_data.txt','w') as file:
+			file.write(processed_midi_data.__repr__())
 
 		processed_sorted_by_note = utils.sort_by_note(processed_midi_data)
 		with open('./tables/6_processed_sorted_by_note.txt','w') as file:
