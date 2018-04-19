@@ -596,6 +596,10 @@ def write_header(write_file):
 	write_file.write('#<Timestamp, track number, MIDI channel, type, key, value>\n')
 	write_file.write('ser.write(\'<0,0,0,8,0,0>\')\n')
 
+def write_footer(write_file):
+	write_file.write('ser.write(\'<0,0,0,7,0,0>\')\n')
+
+
 def build_to_solenoid_staircases(df,hp_df,np_df,lp_df):
 	'''
 	build solenoid staircases ready to play on piano 
