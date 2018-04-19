@@ -37,8 +37,8 @@ if __name__ == '__main__':
 		# 	file.write(processed_midi_data.__repr__())
 
 		processed_sorted_by_note = utils.sort_by_note(processed_midi_data)
-		# with open('./tables/6_processed_sorted_by_note.txt','w') as file:
-		# 	file.write(processed_sorted_by_note.__repr__())
+		with open('./tables/6_processed_sorted_by_note.txt','w') as file:
+			file.write(processed_sorted_by_note.__repr__())
 
 		note_on_spacing = utils.note_on_spacing_threshold(processed_sorted_by_note)
 		# with open('./tables/7_note_on_spacing.txt','w') as file:
@@ -73,6 +73,13 @@ if __name__ == '__main__':
 											 mp_df=midi_percentage)
 		with open('./tables/13_low_power.txt','w') as file:
 			file.write(low_power.__repr__())
+
+		normal_power = utils.generate_normal_power(df=optimize_suggested_gap_dur,\
+												   ps_df=profile['sustain'],\
+												   pns_df=profile['no_sustain'],\
+												   psbn_df=processed_sorted_by_note)
+		with open('./tables/14_normal_power.txt','w') as file:
+			file.write(normal_power.__repr__())
 			
 	print ('args.midi_input: {}'.format('./'+args.midi_input))
 	print ('args.p: {}'.format('./'+args.profile))

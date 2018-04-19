@@ -485,7 +485,7 @@ def suggested_gap_dur(df):
 
 	return df
 
-	
+
 def generate_high_power(df,ps_df,pns_df,mp_df):
 	'''
 	calls the current dataframe (df), profile dataframes (ps_df & pns_df), and midi_percentage dataframe (mp_df)
@@ -537,7 +537,6 @@ def generate_low_power(df,ps_df,pns_df,mp_df):
 	does the same thing as compare to generate_high_power() except that it's for low_power and low_dur
 	'''
 	lp_df = pd.DataFrame(columns=['id_note_on','power','dur'])
-
 	df = sort_by_timestamp(df)
 
 	# assert df.shape[0] == mp_df.shape[0], 'generate_high_power(): df and mp_df have different length'
@@ -566,3 +565,26 @@ def generate_low_power(df,ps_df,pns_df,mp_df):
 			
 	return lp_df
 
+def generate_normal_power(df,ps_df,pns_df,psbn_df):
+	'''
+	gets normal_dur_min from profiles
+	gets profile_power from processed_sorted_by_note
+	'''
+
+	np_df = pd.DataFrame(columns=['id_note_on','power','dur'])
+	df = sort_by_timestamp(df)
+
+	for index, row in df.iterrows():
+		if row['event'] == 1:
+			if row['sustain'] == 1:
+				# with sustain
+				dur = ps_df.loc[ps_df['note'] == row['note']]['normal_dur_min'].item()
+			else:
+				# no sustain
+				dur = pns_df.loc[pns_df['note'] == row['note']]['normal_dur_min'].item()
+			power = psbn_df.loc[psbn_df['id'] == row['id']]['profile_power'].item()
+
+			np_df.loc[np_df.shape[0]] = [int(row['id']),int(power),int(dur)]
+
+	return np_df
+				
