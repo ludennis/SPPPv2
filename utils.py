@@ -587,4 +587,34 @@ def generate_normal_power(df,ps_df,pns_df,psbn_df):
 			np_df.loc[np_df.shape[0]] = [int(row['id']),int(power),int(dur)]
 
 	return np_df
+
+def build_to_solenoid_staircases(df,hp_df,np_df,lp_df):
+	'''
+	build solenoid staircases ready to play on piano 
+	sequence format [timestamp,note,power]
+	'''
+	assert hp_df.shape[0] == np_df.shape[0] and np_df.shap[0] == lp_df.shape[0],\
+		'Error: High Power / Normal Power / Low Power does not have same length'
+
+	for i in range(df.shape[0]-1):
+		cur_row = df.iloc[i]
+		next_row = df.iloc[i+1]
+
+		if cur_row['event'] == 1 and next_row['event'] == 0:
+			note_on = cur_row['event']
+			note_off = next_row['event']
+			dur = note_off['timestamp'] - note_on['timestamp']
+
+			high_power = hp_df.loc[hp_df['id']==note_on['id']]['power'].item()
+			high_dur = hp_df.loc[hp_df['id']==note_on['id']]['dur'].item()
+
+			normal_power = np_df.loc[np_df['id']==note_on['id']]['power'].item()
+			normal_dur = np_df.loc[np_df['id']==note_on['id']]['dur'].item()
+
+			low_power = lp_df.loc[lp_df['id']==note_on['id']]['power'].item()
+			low_dur = lp_dur.loc[lp_df['id']==note_on['id']]['dur'].item()
+
+			
+
+
 				
