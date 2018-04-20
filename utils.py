@@ -17,8 +17,8 @@ def filter_raw_data(file_path):
 	# TODO: assert file_path is a path
 	# TODO: if row_data[3] == 3 and row_data[4] != 64
 
-	df = pd.read_csv(file_path)
-
+	df = pd.read_csv(file_path,header=None)
+	df.columns = ['timestamp','track','channel','event','note','midi_value']
 	'''
 	This mask what needs to be filtered in the column
 	'''
