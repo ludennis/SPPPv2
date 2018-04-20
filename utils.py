@@ -35,7 +35,7 @@ def add_id(df):
 	a column of id is added for convenience.
 	'''
 	df.loc[:,'id'] = pd.Series(np.arange(df.shape[0],dtype=np.int64),index=df.index)
-	df.columns = ['id','timestamp','track','channel','event','note','midi_value']
+	df.columns = ['timestamp','track','channel','event','note','midi_value','id']
 	return df
 
 
@@ -108,10 +108,10 @@ def map_midi_to_percentage(df):
 		if row['event'] == 1:
 			orig_power = row['midi_value']
 			power_percentage = translate_into_percentage(orig_power,song_min,song_max,const.SONG_BOUNDARY)
-			df.loc[index,'midi_value'] = power_percentage
+			df.loc[index,'midi_value'] = int(power_percentage)
 	
 	# changing midi_value to midi_percentage		
-	df.columns = ['id','timestamp','track','channel','event','note','midi_percentage','sustain']
+	df.columns = ['timestamp','track','channel','event','note','midi_percentage','id','sustain']
 	return df
 
 
@@ -208,7 +208,7 @@ def apply_profile(df,profile):
 			df.loc[index,'midi_percentage'] = int(normal_power_min + power_range * note_percentage / 100.0)
 
 	# change midi_percentage to profile_power
-	df.columns = ['id','timestamp','track','channel','event','note','profile_power','sustain']
+	df.columns = ['timestamp','track','channel','event','note','profile_power','id','sustain']
 
 	return df
 
@@ -521,7 +521,7 @@ def generate_high_power(df,ps_df,pns_df,mp_df):
 	# iterate through df
 	for index, row in df.iterrows():
 		if row['event'] == 1:
-			pct = mp_df.loc[mp_df['id'] == row['id']]['midi_percentage'].item()
+			pct = mp_df.loc[mp_df['id'] == row['id'],'midi_percentage'].item()
 			if row['sustain'] == 1:
 				# with sustain
 				high_power_max = ps_df.loc[ps_df['note'] == row['note'],'high_power_max'].item()

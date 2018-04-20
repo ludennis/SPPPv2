@@ -45,6 +45,7 @@ if __name__ == '__main__':
 
 		start_time = datetime.now()
 		midi_percentage = utils.map_midi_to_percentage(midi_with_sustain_column)
+		midi_percentage_copy = midi_percentage.copy()
 		if args.t:
 			with open('./tables/4_midi_percentage.txt','w') as file:
 				file.write(midi_percentage.__repr__())
@@ -74,6 +75,7 @@ if __name__ == '__main__':
 
 		start_time = datetime.now()
 		processed_sorted_by_note = utils.sort_by_note(processed_midi_data)
+		processed_sorted_by_note_copy = processed_sorted_by_note.copy()
 		if args.t:
 			with open('./tables/6_processed_sorted_by_note.txt','w') as file:
 				file.write(processed_sorted_by_note.__repr__())
@@ -119,6 +121,7 @@ if __name__ == '__main__':
 
 		start_time = datetime.now()
 		optimize_suggested_gap_dur = utils.suggested_gap_dur(optimize_suggested_note_dur)
+		optimize_suggested_gap_dur_copy = optimize_suggested_gap_dur.copy()
 		if args.t:
 			with open('./tables/11_optimize_suggested_gap_dur.txt','w') as file:
 				file.write(optimize_suggested_gap_dur.__repr__())
@@ -127,10 +130,10 @@ if __name__ == '__main__':
 
 
 		start_time = datetime.now()
-		high_power = utils.generate_high_power(df=optimize_suggested_gap_dur,\
+		high_power = utils.generate_high_power(df=optimize_suggested_gap_dur_copy,\
 											   ps_df=profile['sustain'],\
 											   pns_df=profile['no_sustain'],\
-											   mp_df=midi_percentage)
+											   mp_df=midi_percentage_copy)
 		if args.t:
 			with open('./tables/12_high_power.txt','w') as file:
 				file.write(high_power.__repr__())
@@ -139,10 +142,10 @@ if __name__ == '__main__':
 
 
 		start_time = datetime.now()
-		low_power = utils.generate_low_power(df=optimize_suggested_gap_dur,\
+		low_power = utils.generate_low_power(df=optimize_suggested_gap_dur_copy,\
 											 ps_df=profile['sustain'],\
 											 pns_df=profile['no_sustain'],\
-											 mp_df=midi_percentage)
+											 mp_df=midi_percentage_copy)
 		if args.t:
 			with open('./tables/13_low_power.txt','w') as file:
 				file.write(low_power.__repr__())
@@ -151,10 +154,10 @@ if __name__ == '__main__':
 
 
 		start_time = datetime.now()
-		normal_power = utils.generate_normal_power(df=optimize_suggested_gap_dur,\
+		normal_power = utils.generate_normal_power(df=optimize_suggested_gap_dur_copy,\
 												   ps_df=profile['sustain'],\
 												   pns_df=profile['no_sustain'],\
-												   psbn_df=processed_sorted_by_note)
+												   psbn_df=processed_sorted_by_note_copy)
 		if args.t:
 			with open('./tables/14_normal_power.txt','w') as file:
 				file.write(normal_power.__repr__())
@@ -163,7 +166,7 @@ if __name__ == '__main__':
 
 
 		start_time = datetime.now()
-		solenoid_staircases = utils.build_to_solenoid_staircases(df=optimize_suggested_gap_dur,\
+		solenoid_staircases = utils.build_to_solenoid_staircases(df=optimize_suggested_gap_dur_copy,\
 																 hp_df=high_power,\
 																 np_df=normal_power,\
 																 lp_df=low_power)
