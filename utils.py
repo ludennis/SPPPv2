@@ -665,14 +665,14 @@ def write_solenoid_to_file(slnd_df,write_file):
 	write_file.write('ser = serial.Serial(\'{}\', 115200, timeout=5)\n'.format(const.COM_SERIAL))
 	write_file.write('time.sleep(5)\n\n')
 	write_file.write('#<Timestamp, track number, MIDI channel, type, key, value>\n')
-	write_file.write('ser.write(\'<0,0,0,8,0,0>\')\n')
+	write_file.write('ser.write(bytes(b\'<0,0,0,8,0,0>\'))\n')
 
 	# write all the notes from slnd_df
 	for index, row in slnd_df.iterrows():
-		write_file.write('ser.write(\'<{},{},{},{},{},{}>\')\n'\
+		write_file.write('ser.write(bytes(b\'<{},{},{},{},{},{}>\'))\n'\
 						 .format(row['timestamp'],row['track'],row['channel'],row['event'],row['note'],row['value']))
 		write_file.write('ser.readline()\n')
 
 	# write the footer
-	write_file.write('ser.write(\'<0,0,0,7,0,0>\')\n')
+	write_file.write('ser.write(bytes(b\'<0,0,0,7,0,0>\'))\n')
 
