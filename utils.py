@@ -34,9 +34,8 @@ def add_id(df):
 	Adds a column of id. This is the same as index, but becuase index is harder to call from,
 	a column of id is added for convenience.
 	'''
-	df['id'] = pd.Series(np.arange(df.shape[0],dtype=int))
-	cols = ['id','timestamp','track','channel','event','note','midi_value']
-	df = df[cols]
+	df.loc[:,'id'] = pd.Series(np.arange(df.shape[0],dtype=np.int64),index=df.index)
+	df.columns = ['id','timestamp','track','channel','event','note','midi_value']
 	return df
 
 
@@ -52,7 +51,7 @@ def add_sustain_column(df):
 	'''
 
 	# add a column of zeroes in data
-	df['sustain'] = pd.Series(np.zeros(df.shape[0],dtype=int))
+	df.loc[:,'sustain'] = pd.Series(np.zeros(df.shape[0],dtype=np.int64),index=df.index)
 
 	# detect sustain and change accordingly
 	sustain_flag = False
@@ -63,7 +62,7 @@ def add_sustain_column(df):
 			else:
 				sustain_flag = False
 			continue
-		df.loc[index]['sustain'] = 1 if sustain_flag == True else 0
+		df.loc[index,'sustain'] = 1 if sustain_flag == True else 0
 
 	return df
 
@@ -109,9 +108,10 @@ def map_midi_to_percentage(df):
 		if row['event'] == 1:
 			orig_power = row['midi_value']
 			power_percentage = translate_into_percentage(orig_power,song_min,song_max,const.SONG_BOUNDARY)
-			df.loc[index]['midi_value'] = power_percentage
-			
-	df = df.rename(index=str,columns={'midi_value':'midi_percentage'})
+			df.loc[index,'midi_value'] = power_percentage
+	
+	# changing midi_value to midi_percentage		
+	df.columns = ['id','timestamp','track','channel','event','note','midi_percentage','sustain']
 	return df
 
 
@@ -205,9 +205,11 @@ def apply_profile(df,profile):
 								profile['no_sustain'].loc[note]['normal_power_max']
 			power_range = normal_power_max - normal_power_min
 			note_percentage = row['midi_percentage']
-			df.loc[index]['midi_percentage'] = int(normal_power_min + power_range * note_percentage / 100.0)
+			df.loc[index,'midi_percentage'] = int(normal_power_min + power_range * note_percentage / 100.0)
 
-	df = df.rename(index=str,columns={'midi_percentage':'profile_power'})
+	# change midi_percentage to profile_power
+	df.columns = ['id','timestamp','track','channel','event','note','profile_power','sustain']
+
 	return df
 
 
@@ -328,11 +330,11 @@ def remove_overlap(df):
 
 				# find if there's an overlap
 				# an overlap happens when the event of 3 notes are 1,1,0
-				if df.iloc[i+1]['note'] == note and df.iloc[i+2]['note'] == note and \
-				   df.iloc[i+1]['event'] == 1 and df.iloc[i+2]['event'] == 0:
+				if df.loc[df.index[i+1],'note'] == note and df.loc[df.index[i+2],'note'] == note and \
+				   df.loc[df.index[i+1],'event'] == 1 and df.loc[df.index[i+2],'event'] == 0:
 					df.loc[df.index[i+2],'timestamp'] = int(cur_note_on['timestamp']) + 1
-					assert df.iloc[i+2]['timestamp'] < df.iloc[i+1]['timestamp'],\
-						   'Overlap still exists at index {} with timestamp {}'.format(i+2,df.iloc[i+2]['timestamp'])   
+					assert df.loc[df.index[i+2],'timestamp'] < df.loc[df.index[i+1],'timestamp'],\
+						   'Overlap still exists at index {} with timestamp {}'.format(i+2,df.loc[df.index[i+2],'timestamp'])   
 
 
 
@@ -522,16 +524,16 @@ def generate_high_power(df,ps_df,pns_df,mp_df):
 			pct = mp_df.loc[mp_df['id'] == row['id']]['midi_percentage'].item()
 			if row['sustain'] == 1:
 				# with sustain
-				high_power_max = ps_df.loc[ps_df['note'] == row['note']]['high_power_max'].item()
-				high_power_min = ps_df.loc[ps_df['note'] == row['note']]['high_power_min'].item()
-				high_dur_max = ps_df.loc[ps_df['note'] == row['note']]['high_dur_max'].item()
-				high_dur_min = ps_df.loc[ps_df['note'] == row['note']]['high_dur_min'].item()
+				high_power_max = ps_df.loc[ps_df['note'] == row['note'],'high_power_max'].item()
+				high_power_min = ps_df.loc[ps_df['note'] == row['note'],'high_power_min'].item()
+				high_dur_max = ps_df.loc[ps_df['note'] == row['note'],'high_dur_max'].item()
+				high_dur_min = ps_df.loc[ps_df['note'] == row['note'],'high_dur_min'].item()
 			else:
 				# no sustain
-				high_power_max = pns_df.loc[pns_df['note'] == row['note']]['high_power_max'].item()
-				high_power_min = pns_df.loc[pns_df['note'] == row['note']]['high_power_min'].item()
-				high_dur_max = pns_df.loc[pns_df['note'] == row['note']]['high_dur_max'].item()
-				high_dur_min = pns_df.loc[pns_df['note'] == row['note']]['high_dur_min'].item()
+				high_power_max = pns_df.loc[pns_df['note'] == row['note'],'high_power_max'].item()
+				high_power_min = pns_df.loc[pns_df['note'] == row['note'],'high_power_min'].item()
+				high_dur_max = pns_df.loc[pns_df['note'] == row['note'],'high_dur_max'].item()
+				high_dur_min = pns_df.loc[pns_df['note'] == row['note'],'high_dur_min'].item()
 				
 			power = int(high_power_min + abs(high_power_min - high_power_max) * pct / 100.0)
 			dur = int(high_dur_min + abs(high_dur_min - high_dur_max) * pct / 100.0)
@@ -553,19 +555,19 @@ def generate_low_power(df,ps_df,pns_df,mp_df):
 
 	for index, row in df.iterrows():
 		if row['event'] == 1:
-			pct = mp_df.loc[mp_df['id'] == row['id']]['midi_percentage'].item()
+			pct = mp_df.loc[mp_df['id'] == row['id'],'midi_percentage'].item()
 			if row['sustain'] == 1:
 				# with sustain
-				low_power_max = ps_df.loc[ps_df['note'] == row['note']]['low_power_max'].item()
-				low_power_min = ps_df.loc[ps_df['note'] == row['note']]['low_power_min'].item()
-				low_dur_max = ps_df.loc[ps_df['note'] == row['note']]['low_dur_max'].item()
-				low_dur_min = ps_df.loc[ps_df['note'] == row['note']]['low_dur_min'].item()
+				low_power_max = ps_df.loc[ps_df['note'] == row['note'],'low_power_max'].item()
+				low_power_min = ps_df.loc[ps_df['note'] == row['note'],'low_power_min'].item()
+				low_dur_max = ps_df.loc[ps_df['note'] == row['note'],'low_dur_max'].item()
+				low_dur_min = ps_df.loc[ps_df['note'] == row['note'],'low_dur_min'].item()
 			else:
 				# no sustain
-				low_power_max = pns_df.loc[pns_df['note'] == row['note']]['low_power_max'].item()
-				low_power_min = pns_df.loc[pns_df['note'] == row['note']]['low_power_min'].item()
-				low_dur_max = pns_df.loc[pns_df['note'] == row['note']]['low_dur_max'].item()
-				low_dur_min = pns_df.loc[pns_df['note'] == row['note']]['low_dur_min'].item()
+				low_power_max = pns_df.loc[pns_df['note'] == row['note'],'low_power_max'].item()
+				low_power_min = pns_df.loc[pns_df['note'] == row['note'],'low_power_min'].item()
+				low_dur_max = pns_df.loc[pns_df['note'] == row['note'],'low_dur_max'].item()
+				low_dur_min = pns_df.loc[pns_df['note'] == row['note'],'low_dur_min'].item()
 				
 			power = int(low_power_min + abs(low_power_min - low_power_max) * pct / 100.0)
 			dur = int(low_dur_min + abs(low_dur_min - low_dur_max) * pct / 100.0)
@@ -589,11 +591,11 @@ def generate_normal_power(df,ps_df,pns_df,psbn_df):
 		if row['event'] == 1:
 			if row['sustain'] == 1:
 				# with sustain
-				dur = ps_df.loc[ps_df['note'] == row['note']]['normal_dur_min'].item()
+				dur = ps_df.loc[ps_df['note'] == row['note'],'normal_dur_min'].item()
 			else:
 				# no sustain
-				dur = pns_df.loc[pns_df['note'] == row['note']]['normal_dur_min'].item()
-			power = psbn_df.loc[psbn_df['id'] == row['id']]['profile_power'].item()
+				dur = pns_df.loc[pns_df['note'] == row['note'],'normal_dur_min'].item()
+			power = psbn_df.loc[psbn_df['id'] == row['id'],'profile_power'].item()
 
 			np_df.loc[np_df.shape[0]] = [int(row['id']),int(power),int(dur)]
 
@@ -622,14 +624,14 @@ def build_to_solenoid_staircases(df,hp_df,np_df,lp_df):
 			note_off = next_row
 			dur = note_off['timestamp'] - note_on['timestamp']
 
-			high_power = hp_df.loc[hp_df['id_note_on']==note_on['id']]['power'].item()
-			high_dur = hp_df.loc[hp_df['id_note_on']==note_on['id']]['dur'].item()
+			high_power = hp_df.loc[hp_df['id_note_on']==note_on['id'],'power'].item()
+			high_dur = hp_df.loc[hp_df['id_note_on']==note_on['id'],'dur'].item()
 
-			normal_power = np_df.loc[np_df['id_note_on']==note_on['id']]['power'].item()
-			normal_dur = np_df.loc[np_df['id_note_on']==note_on['id']]['dur'].item()
+			normal_power = np_df.loc[np_df['id_note_on']==note_on['id'],'power'].item()
+			normal_dur = np_df.loc[np_df['id_note_on']==note_on['id'],'dur'].item()
 
-			low_power = lp_df.loc[lp_df['id_note_on']==note_on['id']]['power'].item()
-			low_dur = lp_df.loc[lp_df['id_note_on']==note_on['id']]['dur'].item()
+			low_power = lp_df.loc[lp_df['id_note_on']==note_on['id'],'power'].item()
+			low_dur = lp_df.loc[lp_df['id_note_on']==note_on['id'],'dur'].item()
 
 			# check to see which ones can fit into the duration of a note 
 			# high power is always guarantee to be in the solenoid staircase
